@@ -1,0 +1,171 @@
+---
+title: "Load Pesticides Data And Report out SUmamry Bifenthrin Data"
+author: "Curtis C. Bohlen, Casco Bay Estuary Partnership"
+output:
+  github_document:
+    toc: true
+    fig_width: 7
+    fig_height: 5
+---
+<img
+    src="https://www.cascobayestuary.org/wp-content/uploads/2014/04/logo_sm.jpg"
+    style="position:absolute;top:10px;right:50px;" />
+
+# Introduction
+This notebook prepares data for further analysis.
+
+In 2014 and 2015, the Maine Board of Pesticides Control collected sedimetn samples from the Coast of Maine and Casco Bay, and analysed them for presence of selected pesticides, especially certain pyrethroid pesticides.
+
+The only pyrethroid that was observed consistently was Bifenthrin, probably because Bifenthrin could be detected in sedimetn sdamples at substantially lower concetrations than the other pyrethroid pesticides on the testing panel.
+ 
+We folusour analysis on Bifenthrin.  Our principal goal is to produce a MAP of average bifenthrin concetrations and a FIGURE showing the relationship betwen Bifenthrin concetraton and extent ofnearby impervious surfaces (as a rough measure of urbanization).   
+
+# Load Libraries
+```{r load_libraries}
+library(tidyverse)
+library(GGally)
+
+library(CBEPgraphics)
+load_cbep_fonts()
+
+library(LCensMeans)
+```
+
+# Load Data
+## File References
+```{r file}
+conc_fn <- 'BPC_2014_2015_Sediment_Data.txt'
+geogr_fn <- 'imperviousness.txt'
+```
+
+## Load IC Data
+```{r ic_data}
+ic_data <- read.delim(geogr_fn, sep = ',') %>%
+  select(-OBJECTID, -Latitude, -Longitude) %>%
+  rename(yr = 'Year_') %>%
+  mutate(pctI500 = imperv500 / (pi*500^2),
+         pctI1000 = imperv1000 / (pi*1000^2),
+         pctI2000 = imperv2000 / (pi*2000^2)) %>%
+  filter(Location != 8)       # Remove Bothbay Location
+```
+
+## Load Pyrethroid Concentration Data
+```{r concentration_data}
+conc_data <- read.delim(conc_fn, skip = 1) %>%
+  select(1:15)
+```
+
+# Calcuate Site Averages
+Note that one of two Little Flying Point replicates was a non-detect, the other was not, so pooling the  two values is problematic.
+
+Here we use a function from CBEP's LCensMeans package to estimate the maximum likelihood value of the (unobserved) concentrations in non-detects. It offers a statistically better justified estimate than replacing NGs wit hteh detection or reporting limit.
+```{r}
+
+avg_data <- conc_data %>%
+  group_by(LocCode) %>%
+  summarize(across(Coarse:BTU_E, mean, na.rm=TRUE), .groups='drop') %>%
+  mutate(Bifenthrin_ND = Bifenthrin_ND>0) %>%
+  mutate(pct500   = ic_data$pctI500[match(LocCode, ic_data$Location)],
+         pct1000  = ic_data$pctI1000[match(LocCode, ic_data$Location)],
+         pct2000  = ic_data$pctI2000[match(LocCode, ic_data$Location)])
+
+
+ml_estimator_Raw <- sub_conditional_means(avg_data$Bifenthrin_Raw,
+                                               avg_data$Bifenthrin_ND)
+avg_data <- avg_data %>%
+  mutate(Bifenthrin_ML     = ml_estimator_Raw) %>%
+  mutate(Bifenthrin_OC_QML = Bifenthrin_ML * 100* (100/(100-Moisture)) / TOC)
+```
+
+## Correlations
+```{r correlations_1}
+cor(avg_data[c(8, 10, 2:7)], use = 'pairwise')
+```
+
+
+```{r correlations_2}
+cor(avg_data[c(8, 10, 13:15)], use = 'pairwise', method = 'pearson')
+```
+So, that looks like the correlation with the IC metrics are important.  Exact size makes only a small amount of difference.
+
+## Export summary table
+```{r export_data}
+avg_data %>% select(-BTU_E, -BTU_H, - pct500, -pct1000, -pct2000) %>%
+  write_csv('bifenthrin_by_site.csv')
+```
+
+
+# Import IC metrics into conc_data
+```{r add_IC_metrics and ml}
+
+ml_estimator_Raw <- sub_conditional_means(conc_data$Bifenthrin_Raw,
+                                               conc_data$Bifenthrin_ND)
+ml_estimator_oc <- sub_conditional_means(conc_data$Bifenthrin_OC,
+                                                  conc_data$Bifenthrin_ND)
+
+conc_data <- conc_data %>%
+  mutate(pct500   = ic_data$pctI500[match(LocCode, ic_data$Location)],
+         pct1000  = ic_data$pctI1000[match(LocCode, ic_data$Location)],
+         pct2000  = ic_data$pctI2000[match(LocCode, ic_data$Location)]) %>%
+  mutate(Bifenthrin_ML = ml_estimator_Raw) %>%
+  mutate(Bifenthrin_OC_ML = ml_estimator_oc) %>%
+  mutate(Bifenthrin_OC_QML = Bifenthrin_ML * 100* (100/(100-Moisture)) / TOC)
+```
+
+
+```{r plot_1}
+plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
+  geom_point(aes(color = Bifenthrin_ND), size = 3) +
+  geom_smooth(method = 'lm', color = cbep_colors()[5],
+              fill = cbep_colors()[5]) +
+ # geom_text(x=0.04, y=0.55, label = 'Yarmouth 2014', hjust = 0) +
+ # geom_text(x=0.425, y=0.99, label = 'South Portland 2014', hjust = 1) +
+  
+  theme_cbep() +
+  theme(legend.position=c(0.25, 0.9)) +
+  
+  scale_color_manual(values = cbep_colors(), name = '',
+                     labels = c('Observed', 'Below Detection Limit')) +
+  
+  ylab('Bifenthrin (ng/g w/w)') +
+  xlab('Pct. Impervious w/in 500 m')
+plt
+ggsave('BifenthrinWW.png', type = 'cairo', width = 7, height = 5)
+ggsave('BifenthrinWW.pdf', device = cairo_pdf, width = 7, height = 5)
+```
+
+```{r plot_2}
+plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_ML)) +
+  geom_point(aes(color = Bifenthrin_ND), size = 3) +
+  geom_smooth(method = 'lm', color = cbep_colors()[5],
+              fill = cbep_colors()[5]) +
+  
+  theme_cbep() +
+  theme(legend.position=c(0.25, 0.9)) +
+  
+  scale_color_manual(values = cbep_colors(), name = '',
+                     labels = c('Observed', 'Below Detection Limit')) +
+  
+  ylab('Bifenthrin (ng/g OC)') +
+  xlab('Pct. Impervious w/in 500 m')
+plt
+```
+
+```{r plot_3}
+plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_QML)) +
+  geom_point(aes(color = Bifenthrin_ND), size = 3) +
+  geom_smooth(method = 'lm', color = cbep_colors()[5],
+              fill = cbep_colors()[5]) +
+  
+  theme_cbep() +
+  theme(legend.position=c(0.25, 0.9)) +
+  
+  scale_color_manual(values = cbep_colors(), name = '',
+                     labels = c('Observed', 'Below Detection Limit')) +
+  
+  ylab('Bifenthrin (ng/g OC)') +
+  xlab('Pct. Impervious w/in 500 m')
+plt
+```
+
+

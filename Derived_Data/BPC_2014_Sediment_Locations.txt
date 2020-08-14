@@ -1,0 +1,9 @@
+	Town	Latitude	Longitude
+1	Biddeford	43.4947	-70.47919
+2	S. Portland	43.633741	-70.249861
+3	Portland	43.68139	-70.2756
+4	Yarmouth	43.79904	-70.11834
+5	Freeport	43.842202	-70.099984
+6	Brunswick	43.864617	-70.02634
+7	Bath	43.888861	-69.816083
+7	Bath	43.888861	-69.816083

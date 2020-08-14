@@ -1,0 +1,182 @@
+---
+title: "Analysis of BPC 2015  Marine Pestice Data"
+output: html_notebook
+---
+
+#Libraries
+```{r}
+library(tidyverse)
+library(magrittr)
+```
+
+#Load 2015 Sediment Data
+```{r}
+the.2015.data <- read.delim('BPC 2015 Sediment Samples.txt', sep = '\t')
+# Note to allow  numeric input I replaced two entries (n excel) with "< 0.1" with 0.05.
+the.2015.data <- select(the.2015.data, 1:15)
+the.2015.data <- filter(the.2015.data, ! is.na(Location))
+summary(the.2015.data)
+```
+
+#Import data on non-detect levels for those things that have NOT been detected
+nd.data <- 
+```{r}
+library(readxl)
+dl.data <- read_excel("2015 stormwater sampling DLs for Curtis ccb edits.xlsx", 
+    sheet = "ND levels", skip = 2)
+View(dl_data)
+```
+
+As expected, organic matter is correlated with proportion of fines in the sample
+```{r}
+the.2015.data %$% cor(Clay, TOC_Pct)
+the.2015.data %$% cor((Clay+Silt), TOC_Pct) 
+the.2015.data %$% cor((Clay)/(Clay+Silt+Sand), TOC_Pct)  # in case outliers reflect presence of carse particles
+
+```
+
+
+
+```{r}
+plt <- ggplot(the.2015.data) + aes((Clay+Silt), TOC_Pct) + geom_point() + geom_smooth(method = 'lm')
+plt
+
+```
+
+Bifenthrin clearly shows a pattern with TOC
+
+```{r}
+tmp <- the.2015.data %>% replace_na(list(Bifenthrin_raw = 0.045))  #VALUE NOT CONFIRMED FOR 2015 DATA
+plt <- ggplot(tmp) + aes(TOC_Pct, Bifenthrin_raw) + geom_point() + geom_smooth(method = 'lm') + geom_hline(yintercept =0.045, color = 'red')
+plt
+rm(tmp)
+
+```
+The problem, of course, is what to do with those non-detects in estimating patterns.
+Assuming the ND are zero leads to inflated variances.
+```{r}
+tmp <- the.2015.data %>% replace_na(list(Bifenthrin_raw = 0))
+plt <- ggplot(tmp) + aes((Silt+Clay), Bifenthrin_raw) + geom_point() + geom_smooth(method = 'lm') + geom_hline(yintercept =0.045, color = 'red')
+plt
+rm(tmp)
+
+```
+
+```{r}
+plt <- ggplot(the.2015.data) + aes(Bifenthrin_raw) + geom_histogram(binwidth = .1) + geom_vline(xintercept = 0.045, color = 'red')
+plt
+```
+
+```{r}
+plt <- ggplot(the.2015.data) + aes(Bifenthrin_raw) + geom_density() + geom_vline(xintercept = 0.045, color = 'red')
+plt
+```
+
+
+```{r}
+plt <- ggplot(the.2015.data) + aes(Bifenthrin_OC, ..density..) + geom_histogram( binwidth = 7.5) + geom_density()
+plt
+```
+
+
+
+
+
+```{r}
+cor(the.2015.data[4:12], use="pairwise")
+cor(log(the.2015.data[4:12]), use="pairwise")
+```
+
+so pattern shows moisture is correlted with silt, and to a lesser extent, clay. WOould it be worth developing a PCR score for teh first four varibles?
+
+```{r}
+plt <- ggplot(the.2015.data, aes(Silt, Clay)) + geom_point(aes( color = Moisture_Pct), size =4) + scale_x_log10() + scale_y_log10()
+plt
+```
+
+So, problem with some of this is that we use some of the physical environment values to calculate the 1*(.9/(1-.9)adjusted Bifenthrin work.  
+Bifenthrin DW is adjusted for moisture content.
+DW = Raw (Mass/ wet weight) x (Wet Weight/Dry Weight) = Raw   x (Mosture_pct/(1- moisture pct))
+
+```{r}
+plt <- ggplot(the.2015.data) + geom_point(aes(Moisture_Pct, Bifenthrin_raw, color = 'Raw')) +
+  geom_smooth(aes(Moisture_Pct, Bifenthrin_raw, color = 'Raw'), method = 'lm') +
+  geom_point(aes(Moisture_Pct, Bifenthrin_dw, color = 'Dry Weight')) +
+  geom_smooth(aes(Moisture_Pct, Bifenthrin_dw, color = 'Dry Weight'), method = 'lm')+
+  scale_y_log10()
+plt
+
+```
+a log basis
+Correction for moisture INCREASES both slope and variation. (That's more ovbious is we don't put the y scale on )
+
+
+```{r}
+plt <- ggplot(the.2015.data) + geom_point(aes(Moisture_Pct, Bifenthrin_raw, color = 'Raw')) +
+  geom_smooth(aes(Moisture_Pct, Bifenthrin_raw, color = 'Raw'), method = 'lm') +
+  geom_point(aes(Moisture_Pct, Bifenthrin_OC, color = 'Per Unit OC')) +
+  geom_smooth(aes(Moisture_Pct, Bifenthrin_OC, color = 'Per Unit OC'), method = 'lm') +
+  scale_y_log10()
+plt
+
+```
+But correctcoion for OC reduces that again.
+
+```{r}
+cor(the.2015.data[,c(12, 4, 5, 6, 7)], use = 'pairwise')
+```
+the weirdness here is that the result is positively correlaated is weakly with sand
+
+Question:  How important is the "Coarse" fraction, which is unlikely to be picked un in analytic samples.
+
+```{r}
+plt <- ggplot(the.2015.data) + aes(Coarse) + geom_histogram( bins = 10)
+plt
+```
+
+
+```{r}
+cor(the.2015.data[,c(10, 4, 5, 6, 7, 11, 9, 12,8)], use = 'pairwise')
+```
+
+Raw bifenthrin is negatively correlated with the Coarse fraction.
+Bifenthrin DW is POSITIVELY correlated with moisture, which reflects the mathematical process of calculating that 
+
+```{r}
+MockWW <- seq(0,0.5,by = 0.1)  # mock values of raw concentration
+#
+calccDW10 <- MockWW * 100/(100-10)  #This is the functional correcton between 
+calccDW30 <- MockWW * 100/(100-30)
+calccDW50 <- MockWW * 100/(100-50)
+
+test <- data.frame(MockWW, calccDW10, calccDW30, calccDW50)
+
+plt <- ggplot(test) + aes(x = MockWW) +
+  geom_line(aes(y = calccDW10, color = '10')) +
+  geom_line(aes(y = calccDW30, color = '30')) + 
+  geom_line(aes(y = calccDW50, color = '50')) 
+
+plt
+
+rm(test, MockWW, calccDW10, calccDW30, calccDW50)
+```
+
+
+Better wat=y to show that is the show how estimate of value in dry weight terms 
+
+```{r}
+
+moisture <- seq(0,0.5, by = 0.01)
+
+wet <-  0.05
+
+plt <- ggplot(,aes(moisture, (wet / (1-moisture)))) +
+  geom_line() +
+  geom_hline(yintercept = 0.05, lty = 2, color = 'red') +
+  ylab('Estimated Concentration on a Dry Weight Basis')
+  xlab('simulated Weght Weight Basis')
+plt
+
+
+```
+

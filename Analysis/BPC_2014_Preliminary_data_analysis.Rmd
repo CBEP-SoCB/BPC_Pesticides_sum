@@ -1,0 +1,171 @@
+---
+title: "Analysis of BPC 2015 and 2014 Marine Pestice Data"
+output: html_notebook
+---
+
+#Libraries
+```{r}
+library(tidyverse)
+library(magrittr)
+library(readxl)
+```
+
+# Load Data
+```{r}
+the.2014.data <- read.delim('BPC 2014 Water Quality ccb for analysis.txt', sep = '\t')
+# Note to allow  numeric input I replaced two entries (in excel) with "< 0.1" with 0.05.
+the.2014.data <- select(the.2014.data, 1:15)
+the.2014.data <- filter(the.2014.data, ! is.na(Town))
+summary(the.2014.data)
+```
+
+#Detection limits
+```{r}
+dl.data.2014 <- read_excel("BPC 2014 Water Quality.xlsx", 
+    sheet = "Table 1", skip = 2,
+    col_names = c('Pesticide', 'RL', 'Num'),
+    col_types = c('text', 'numeric', 'numeric'))
+#Not sure why the pesticide names were reading in followed by '\n\r', but the following strips them clean 
+dl.data.2014 <- dl.data.2014 %>% mutate(Pesticide  = gsub('[ \n\r]', '', Pesticide))
+```
+
+#Analysis of the Environmental Data
+So this allows four alternative formats for data, for different purposes.
+(1) Replace all NDs with NA
+(2) Replace all ND with 0
+(3) Replace all ND with RL
+(4) replace all ND with 1/2 of the RL
+
+A fifth alternative requires two stage modeling, where the NDs are treated as additional data for estimating the true value of the 
+
+
+
+```{r}
+library(ggtern)
+
+```
+```{r}
+plt = ggtern(the.2014.data, aes(Sand, Silt, Clay)) + geom_point((aes(color = Longitude)))
+plt
+```
+You can see that the sediments range from sands to silts.  Clay content is uniformally low, but generally correlated with silt content.
+
+Correlations are interesting, but recall that the three components (more or less) add up to one, so they have to be negatively correlated.
+
+Sand had the highest variation, so conditioning other vasriables on percent sand probably makes the most sense.
+
+```{r}
+the.2014.data %$% cor(Sand, Clay)
+the.2014.data %$% cor(Sand, Silt)
+the.2014.data %$% cor(Silt, Clay)
+```
+
+As expected, organic matter is correlated with proportion of fines (negatively correlated with sands) in the sample
+```{r}
+the.2014.data %$% cor(Sand, TOC)
+the.2014.data %$% cor(Clay, TOC)
+the.2014.data %$% cor(Silt, TOC) 
+```
+
+
+```{r}
+plt <- ggplot(the.2014.data) + aes(Sand, TOC) + geom_point(aes(color = Bifenthrin_Raw)) + geom_smooth(method = 'lm')
+plt
+
+```
+Note that the NDs turn up as grey in that figure.
+Bifenthrin clearly shows a pattern with TOC.  But it does NOT look like there's a strong connection with soil texture per se.
+
+#Bifenthrin Levels
+
+```{r}
+the.2014.data %$% cor(Sand, Bifenthrin_Raw, use = 'pairwise')
+the.2014.data %$% cor(TOC, Bifenthrin_Raw, use = 'pairwise')
+the.2014.data %$% cor(Clay, Bifenthrin_Raw, use = 'pairwise') 
+```
+But that treated all NDs as contianing no information. In fact, we know they DO tell us something.  WE can calculate the correlations with various dummy values for the NDs.  The correlations drops, althouh it is almost certainly stil non-zero.
+```{r}
+tmp <- the.2014.data %>% replace_na(list(Bifenthrin_Raw = 0.045)) # 0.045 was the DL for Bifenthrin
+
+tmp %$% cor(Sand, Bifenthrin_Raw, use = 'pairwise')
+tmp %$% cor(TOC, Bifenthrin_Raw, use = 'pairwise')
+```
+
+```{r}
+tmp <- the.2014.data %>% replace_na(list(Bifenthrin_Raw = (0.045)/2)) # 0.045 was the DL for Bifenthrin
+
+tmp %$% cor(Sand, Bifenthrin_Raw, use = 'pairwise')
+tmp %$% cor(TOC, Bifenthrin_Raw, use = 'pairwise')
+```
+```{r}
+tmp <- the.2014.data %>% replace_na(list(Bifenthrin_Raw = 0))
+
+tmp %$% cor(Sand, Bifenthrin_Raw, use = 'pairwise')
+tmp %$% cor(TOC, Bifenthrin_Raw, use = 'pairwise')
+rm
+```
+
+
+
+```{r}
+tmp <- the.2014.data %>% replace_na(list(Bifenthrin_Raw = 0.045)) # 0.045 was the DL for Bifenthrin
+plt <- ggplot(tmp) + aes(TOC, Bifenthrin_Raw) + geom_point() + geom_smooth(method = 'lm') + geom_hline(yintercept =0.045, color = 'red')
+plt
+rm(tmp)
+
+```
+#The data is too thin to plot asa a histogram and estimate a distribution.
+
+```{r}
+plt <- ggplot(the.2014.data) + aes(Bifenthrin_Raw) + geom_histogram(binwidth = .20) + geom_vline(xintercept = 0.045, color = 'red')
+plt
+```
+
+```{r}
+plt <- ggplot(the.2014.data) + aes(Bifenthrin_Raw) + geom_density() + geom_vline(xintercept = 0.045, color = 'red')
+plt
+```
+One could almost consider that a truncated normal distribution.
+
+How would we calculate a maximum likelihood model for that?
+
+We model the data as a normal variate, truncated, with mean mu and variance sigma^2
+Break the data into two parts.
+
+First, assume a normal distribution of observations
+
+$$p(x) = N(mu, sigma) =  \frac{e^\frac{(x-mu)^2}{2*Sigma^2} } { sqrt(2*pi*sigma^2) }$$
+
+Those data that are ND, likelihood is a bernoulli trial, with p = 1-PDF(x<DL)
+
+$$p(x) = p(X<DL) = \int_{-oo}^{DL} \frac{e^\frac{(x-mu)^2}{2*Sigma^2}} { sqrt(2*pi*sigma^2) } $$
+
+Other data are Normal, with P = N(mu, sigma)
+
+Model a 
+
+P(observation) = if x > DL, P()
+p(ND) = p(x<0.045 | E(x) = 
+
+
+
+
+
+
+
+
+```{r}
+plt <- ggplot(the.2014.data) + aes(log10(Bifenthrin_Raw)) + geom_histogram(binwidth = .2) + geom_vline(xintercept = log10(0.045), color = 'red')
+plt
+```
+
+
+
+
+
+
+
+
+
+
+
