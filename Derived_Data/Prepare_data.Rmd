@@ -12,13 +12,20 @@ output:
     style="position:absolute;top:10px;right:50px;" />
 
 # Introduction
-This notebook prepares data for further analysis.
+This notebook prepares BPC Pesticides data from Casco Bay for further analysis.
 
-In 2014 and 2015, the Maine Board of Pesticides Control collected sedimetn samples from the Coast of Maine and Casco Bay, and analysed them for presence of selected pesticides, especially certain pyrethroid pesticides.
+## Sediment Data
+In 2014 and 2015, the Maine Board of Pesticides Control collected sediment samples from the Coast of Maine and Casco Bay, and analyzed them for presence of selected pesticides, especially certain pyrethroid pesticides.
 
-The only pyrethroid that was observed consistently was Bifenthrin, probably because Bifenthrin could be detected in sedimetn sdamples at substantially lower concetrations than the other pyrethroid pesticides on the testing panel.
+The only pyrethroid that was observed consistently was bifenthrin, perhaps because bifenthrin could be detected in sediment samples at substantially lower concentrations than the other  pesticides on the testing panel.  Concentrations (expressed on  organic carbon weighted basis) were on the order of one and a half to two orders of magnitude below LC50 values for two species of crustaceans for which sediment toxicity data were available.
  
-We folusour analysis on Bifenthrin.  Our principal goal is to produce a MAP of average bifenthrin concetrations and a FIGURE showing the relationship betwen Bifenthrin concetraton and extent ofnearby impervious surfaces (as a rough measure of urbanization).   
+Our principal goal is to produce a MAP of average bifenthrin concentrations and a FIGURE showing the relationship between bifenthrin concentration and extent of nearby impervious surfaces (as a rough measure of urbanization).
+
+## Stormwater Samples
+in 2015, the BPC collected stormwater samples from streams and storm drain outfalls near where sediment samples were collected in 2014.  These samples were analyzed both for pyrethroids and for a comprehensive list of 101 pesticides (see 'Anylate_Lists_2010.xlsx'), including insecticides, herbicides, and fungicides.  The list of pesticides does not include banned organochlorine pesticides like DDT and Chlordane, but focuses on pesticides in present-day use, many of which are thought to have relatively short lifespans in the aquatic environment.  
+
+
+A few more pesticides were observed 
 
 # Load Libraries
 ```{r load_libraries}
@@ -36,6 +43,7 @@ library(LCensMeans)
 ```{r file}
 conc_fn <- 'BPC_2014_2015_Sediment_Data.txt'
 geogr_fn <- 'imperviousness.txt'
+storm_fn <- 'BPC_2015_Stormwater_Data.txt'
 ```
 
 ## Load IC Data
@@ -46,7 +54,7 @@ ic_data <- read.delim(geogr_fn, sep = ',') %>%
   mutate(pctI500 = imperv500 / (pi*500^2),
          pctI1000 = imperv1000 / (pi*1000^2),
          pctI2000 = imperv2000 / (pi*2000^2)) %>%
-  filter(Location != 8)       # Remove Bothbay Location
+  filter(Location != 8)       # Remove Boothbay Location
 ```
 
 ## Load Pyrethroid Concentration Data
@@ -55,10 +63,19 @@ conc_data <- read.delim(conc_fn, skip = 1) %>%
   select(1:15)
 ```
 
-# Calcuate Site Averages
+## Load Stormwater Data
+While I Load the Stormwater Data, data is only from a handful of sites, and we observe only a handful of pesticides regularly.
+
+The most frequently observed pesticides are 
+```{r concentration_data}
+storm_data <- read.delim(storm_fn, skip = 1)
+```
+
+
+# Calcuate Sediment Site Bifenthrin Averages
 Note that one of two Little Flying Point replicates was a non-detect, the other was not, so pooling the  two values is problematic.
 
-Here we use a function from CBEP's LCensMeans package to estimate the maximum likelihood value of the (unobserved) concentrations in non-detects. It offers a statistically better justified estimate than replacing NGs wit hteh detection or reporting limit.
+Here we use a function from CBEP's LCensMeans package to estimate the maximum likelihood value of the (unobserved) concentrations in non-detects. It offers a statistically better justified estimate than replacing non-detects with the detection or reporting limit.
 ```{r}
 
 avg_data <- conc_data %>%
@@ -112,60 +129,5 @@ conc_data <- conc_data %>%
   mutate(Bifenthrin_OC_QML = Bifenthrin_ML * 100* (100/(100-Moisture)) / TOC)
 ```
 
-
-```{r plot_1}
-plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
-  geom_point(aes(color = Bifenthrin_ND), size = 3) +
-  geom_smooth(method = 'lm', color = cbep_colors()[5],
-              fill = cbep_colors()[5]) +
- # geom_text(x=0.04, y=0.55, label = 'Yarmouth 2014', hjust = 0) +
- # geom_text(x=0.425, y=0.99, label = 'South Portland 2014', hjust = 1) +
-  
-  theme_cbep() +
-  theme(legend.position=c(0.25, 0.9)) +
-  
-  scale_color_manual(values = cbep_colors(), name = '',
-                     labels = c('Observed', 'Below Detection Limit')) +
-  
-  ylab('Bifenthrin (ng/g w/w)') +
-  xlab('Pct. Impervious w/in 500 m')
-plt
-ggsave('BifenthrinWW.png', type = 'cairo', width = 7, height = 5)
-ggsave('BifenthrinWW.pdf', device = cairo_pdf, width = 7, height = 5)
-```
-
-```{r plot_2}
-plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_ML)) +
-  geom_point(aes(color = Bifenthrin_ND), size = 3) +
-  geom_smooth(method = 'lm', color = cbep_colors()[5],
-              fill = cbep_colors()[5]) +
-  
-  theme_cbep() +
-  theme(legend.position=c(0.25, 0.9)) +
-  
-  scale_color_manual(values = cbep_colors(), name = '',
-                     labels = c('Observed', 'Below Detection Limit')) +
-  
-  ylab('Bifenthrin (ng/g OC)') +
-  xlab('Pct. Impervious w/in 500 m')
-plt
-```
-
-```{r plot_3}
-plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_QML)) +
-  geom_point(aes(color = Bifenthrin_ND), size = 3) +
-  geom_smooth(method = 'lm', color = cbep_colors()[5],
-              fill = cbep_colors()[5]) +
-  
-  theme_cbep() +
-  theme(legend.position=c(0.25, 0.9)) +
-  
-  scale_color_manual(values = cbep_colors(), name = '',
-                     labels = c('Observed', 'Below Detection Limit')) +
-  
-  ylab('Bifenthrin (ng/g OC)') +
-  xlab('Pct. Impervious w/in 500 m')
-plt
-```
 
 
