@@ -1,0 +1,112 @@
+---
+title: "Load Pesticides Data And Report out SUmamry Bifenthrin Data"
+author: "Curtis C. Bohlen, Casco Bay Estuary Partnership"
+output:
+  github_document:
+    toc: true
+    fig_width: 7
+    fig_height: 5
+---
+<img
+    src="https://www.cascobayestuary.org/wp-content/uploads/2014/04/logo_sm.jpg"
+    style="position:absolute;top:10px;right:50px;" />
+
+# Introduction
+in 2015, the BPC collected stormwater samples from streams and storm drain outfalls near where sediment samples were collected in 2014. These samples were analyzed both for pyrethroids and for a comprehensive list of 101 pesticides (see 'Anylate_Lists_2015.xlsx'), including insecticides, herbicides, and fungicides.  The list of pesticides does not include banned organochlorine pesticides like DDT and chlordane, but focuses on pesticides in present-day use, many of which are thought to have relatively short lifespans in the aquatic environment.  
+
+# Load Libraries
+```{r load_libraries}
+library(tidyverse)
+
+```
+
+# Load Data
+## Folder References
+```{r folder_refs}
+sibfldnm <- 'Derived_Data'
+parent   <- dirname(getwd())
+sibling  <- file.path(parent,sibfldnm)
+
+fn    <- 'BPC_2015_Stormwater_Data.txt'
+fpath <- file.path(sibling,fn)
+```
+
+## Load Stormwater Data
+```{r load_data}
+storm_data <- read.delim(fpath, skip = 1)
+```
+
+### What Pesticides Were Detected in Stormwater?
+Because the two laboratories used different methods for reporting their results, some of these are below detection limits, an some are below reporting limits.  This serves only as a GENRAL indication of the number of detections for each pesticide.
+```{r detections}
+Pesticides <- tibble(Pesticide = names(storm_data)) %>%
+  filter(! grepl('ND', Pesticide))  %>%
+  filter(! grepl('Flag', Pesticide))  %>%
+  filter(c(rep(FALSE,2),rep(TRUE,15))) %>%
+ mutate(Pesticide = if_else(Pesticide == 'twofourD', '2,4 D', Pesticide)) %>%
+  pull(Pesticide)
+knitr:: kable(Pesticides, col.names = c('Pesticide'), caption = 'Pesticides Detected in Stormwater Entering Casco Bay, 2015 BPC Stormwater Study')
+
+```
+### Maximum Observed Value and Approcximate Number of Detections 
+Because of the way the two laboratories reported results, these are not strictly consistent, but they provide a rough idea of relative abundance of detects.  Number of detects is slightly higher for the first few pesticides because Montana Laboratory gave the value "Q" for values above detection limit but below reporting limit, while the other laboratory offered estimated values, flagged with "J".
+
+The  primary pesticides of concern (based on number of detects) are
+*  2,4 D
+*  Imidacloprid
+*  MCPP
+*  Metolachlor
+*  Bifethrin
+*  Fipronil (and its metabolites)
+
+We restrict our focus to them.
+
+##  Related Aquatic Life Benchmarks
+We can look at EPA Aquatic Life Benchmarks for those pesticides (all in ug/l) from [here](https://www.epa.gov/pesticide-science-and-assessing-pesticide-risks/aquatic-life-benchmarks-and-ecological-risk).
+```{r benchmarks}
+fn    <- 'Aquatic_Life_Benchmarks.txt'
+fpath <- file.path(sibling,fn)
+
+ALB_data <- read.delim(fpath, skip=1) %>% select (-Comment)
+
+```
+
+# Summary of Caso Bay Observations
+```{r summary}
+part1 <- storm_data %>% select(contains('ND')) %>%
+  summarize_all(function (x) sum(!x)) %>%
+  rename_all(~substr(., 1, nchar(.)-3)) %>%
+  rename(`2,4 D` = twofourD) %>%
+  t() %>%
+  as.data.frame() %>%
+  rename(Detects = V1) %>%
+ rownames_to_column('Pesticide')
+
+part1 <- part1 %>% filter(Pesticide %in% c('2,4 D', 'Imidacloprid', 'MCPP', 'Metolachlor', 'Bifenthrin', 'Fipronil'))
+
+part2 <- storm_data %>% select(twofourD, Imidacloprid, MCPP, Metolachlor, Bifenthrin, Fipronil) %>%
+  mutate(Fipronil = Fipronil / 1000) %>%    # Adjust Units (measured in ng/l)
+  summarize_all(function (x) max(x)) %>%
+  rename(`2,4 D` = twofourD) %>%
+  t() %>%
+  as.data.frame() %>%
+  rename(`Maximum Concentration` = V1) %>%
+  rownames_to_column('Pesticide')
+
+sum_data <- bind_cols(part1, part2) %>% select(-3) %>% rename(Pesticide = Pesticide...1)
+
+
+options(knitr.kable.NA = '')
+left_join(sum_data, ALB_data, by= 'Pesticide') %>%
+  knitr::kable(align = "rccrrcccccc", format.args = list(scientific=FALSE))
+```
+
+
+# Results
+
+*  The MAXIMUM observed stormwater concentration of Imidacloprid exceeds the CHRONIC aquatic invertebrate benchmark.  So does the detection limit....
+*  The MAXIMUM observed stormwater concentration of Bifenthrin exceeds the CHRONIC aquatic invertebrate benchmark.  So does the detection limit....
+
+In both cases, since these are storm event samples, it is hard to know whether these elevated concentrations are persistent or not.  The observed values are all below the realted ACUTE benchmarks (by about a factor of 3).
+
+
