@@ -1,7 +1,5 @@
 ---
 title: "Load Pesticides Data And Report out Summary Bifenthrin Data"
-=======
-
 author: "Curtis C. Bohlen, Casco Bay Estuary Partnership"
 output:
   github_document:

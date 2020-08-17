@@ -1,4 +1,4 @@
-Load Pesticides Data And Report out SUmamry Bifenthrin Data
+Load Pesticides Data And Report out Summary Bifenthrin Data
 ================
 Curtis C. Bohlen, Casco Bay Estuary Partnership
 
@@ -42,14 +42,14 @@ impervious surfaces (as a rough measure of urbanization).
 library(tidyverse)
 ```
 
-    ## -- Attaching packages --------------------------------------------------------------------------------------------------- tidyverse 1.3.0 --
+    ## -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
 
     ## v ggplot2 3.3.2     v purrr   0.3.4
     ## v tibble  3.0.3     v dplyr   1.0.0
     ## v tidyr   1.1.0     v stringr 1.4.0
     ## v readr   1.3.1     v forcats 0.5.0
 
-    ## -- Conflicts ------------------------------------------------------------------------------------------------------ tidyverse_conflicts() --
+    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -179,19 +179,19 @@ summary(the_lm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -0.13937 -0.08230 -0.02154  0.00410  0.50627 
+    ## -0.13943 -0.08234 -0.02162  0.00407  0.50624 
     ## 
     ## Coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)  0.01546    0.04397   0.352    0.728    
-    ## pct500       1.24937    0.23227   5.379  1.6e-05 ***
+    ## (Intercept)  0.01549    0.04395   0.352    0.728    
+    ## pct500       1.24947    0.23217   5.382 1.59e-05 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Residual standard error: 0.1517 on 24 degrees of freedom
     ##   (4 observations deleted due to missingness)
-    ## Multiple R-squared:  0.5466, Adjusted R-squared:  0.5277 
-    ## F-statistic: 28.93 on 1 and 24 DF,  p-value: 1.597e-05
+    ## Multiple R-squared:  0.5468, Adjusted R-squared:  0.528 
+    ## F-statistic: 28.96 on 1 and 24 DF,  p-value: 1.587e-05
 
 ``` r
 the_lm <- lm(log10(Bifenthrin_ML)~pct500, data = conc_data)
@@ -203,20 +203,20 @@ summary(the_lm)
     ## lm(formula = log10(Bifenthrin_ML) ~ pct500, data = conc_data)
     ## 
     ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -0.52101 -0.23729 -0.02116  0.16702  1.10240 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -0.5005 -0.2420 -0.0221  0.1664  1.1019 
     ## 
     ## Coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept) -1.45240    0.09814 -14.800 1.45e-13 ***
-    ## pct500       3.20571    0.51837   6.184 2.17e-06 ***
+    ## (Intercept) -1.45193    0.09764 -14.870 1.31e-13 ***
+    ## pct500       3.20747    0.51578   6.219 2.00e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.3386 on 24 degrees of freedom
+    ## Residual standard error: 0.3369 on 24 degrees of freedom
     ##   (4 observations deleted due to missingness)
-    ## Multiple R-squared:  0.6144, Adjusted R-squared:  0.5984 
-    ## F-statistic: 38.24 on 1 and 24 DF,  p-value: 2.17e-06
+    ## Multiple R-squared:  0.6171, Adjusted R-squared:  0.6011 
+    ## F-statistic: 38.67 on 1 and 24 DF,  p-value: 1.995e-06
 
 # Alternate Graphic
 
