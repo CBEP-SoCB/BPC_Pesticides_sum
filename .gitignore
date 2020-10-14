@@ -36,5 +36,6 @@ Original_Data/DATA_SOURCES.html
 **/omitfromgit/
 
 # Non-essential ArcGIS File
-**/GIS_FIles.idb/
+**/GIS_Files.ldb
+**/GIS_Files.idb/
 Derived_Data/imperviousness_map.mxd

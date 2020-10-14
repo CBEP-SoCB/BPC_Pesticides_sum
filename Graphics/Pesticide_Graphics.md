@@ -1,6 +1,7 @@
-Load Pesticides Data And Report out Summary Bifenthrin Data
+Prepare Sediment Bifenthrin Graphics
 ================
-Curtis C. Bohlen, Casco Bay Estuary Partnership
+Curtis C. Bohlen, Casco Bay Estuary Partnership.
+Revised October 13, 2020
 
   - [Introduction](#introduction)
   - [Load Libraries](#load-libraries)
@@ -11,9 +12,17 @@ Curtis C. Bohlen, Casco Bay Estuary Partnership
         Data](#load-pyrethroid-concentration-data)
   - [Import IC metrics into
     conc\_data](#import-ic-metrics-into-conc_data)
-  - [Principal Graphic](#principal-graphic)
+  - [Principal Graphics](#principal-graphics)
+      - [Initial Graphic with Log-linear
+        Model](#initial-graphic-with-log-linear-model)
       - [Related Linear Models](#related-linear-models)
-  - [Alternate Graphic](#alternate-graphic)
+          - [Linear Model](#linear-model)
+          - [Theil-Sen Resistent
+            Regression](#theil-sen-resistent-regression)
+          - [Showing the Resistant
+            Regression](#showing-the-resistant-regression)
+  - [Concentrations on an Organic Carbon
+    Basis](#concentrations-on-an-organic-carbon-basis)
 
 <img
     src="https://www.cascobayestuary.org/wp-content/uploads/2014/04/logo_sm.jpg"
@@ -42,18 +51,20 @@ impervious surfaces (as a rough measure of urbanization).
 library(tidyverse)
 ```
 
-    ## -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
+    ## -- Attaching packages ------------------------------------------------------------------- tidyverse 1.3.0 --
 
     ## v ggplot2 3.3.2     v purrr   0.3.4
-    ## v tibble  3.0.3     v dplyr   1.0.0
-    ## v tidyr   1.1.0     v stringr 1.4.0
+    ## v tibble  3.0.3     v dplyr   1.0.2
+    ## v tidyr   1.1.2     v stringr 1.4.0
     ## v readr   1.3.1     v forcats 0.5.0
 
-    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+    ## -- Conflicts ---------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
 ``` r
+library(mblm)
+
 library(CBEPgraphics)
 load_cbep_fonts()
 
@@ -94,43 +105,55 @@ conc_data <- read.delim(file.path(sibling, conc_fn), skip = 1) %>%
 
 # Import IC metrics into conc\_data
 
-``` r
-ml_estimator_Raw <- sub_conditional_means(conc_data$Bifenthrin_Raw,
-                                               conc_data$Bifenthrin_ND)
-ml_estimator_oc <- sub_conditional_means(conc_data$Bifenthrin_OC,
-                                                  conc_data$Bifenthrin_ND)
+We calculate estimated organic-carbon weighted concentrations AFTER
+calculating maximum likelihood estimates of dry weight. Detection limits
+for the relevant methods apply to dry weight concentrations, so that is
+the appropriate place to calculate the ML estimators.
 
+``` r
+ml_estimator_Raw <- sub_cmeans(conc_data$Bifenthrin_Raw,
+                                               conc_data$Bifenthrin_ND)
 conc_data <- conc_data %>%
   mutate(pct500   = ic_data$pctI500[match(LocCode, ic_data$Location)],
          pct1000  = ic_data$pctI1000[match(LocCode, ic_data$Location)],
          pct2000  = ic_data$pctI2000[match(LocCode, ic_data$Location)]) %>%
-  mutate(Bifenthrin_ML = ml_estimator_Raw) %>%
-  mutate(Bifenthrin_OC_ML = ml_estimator_oc) %>%
-  mutate(Bifenthrin_OC_QML = Bifenthrin_ML * 100* (100/(100-Moisture)) / TOC)
+  mutate(Bifenthrin_ML = ml_estimator_Raw,     # Raw observation (dry weight)
+         Bifenthrin_OC_QML = Bifenthrin_ML * 100* (100/(100-Moisture)) / TOC) %>%
+  mutate(across(starts_with('pct'), ~ round(.x * 100, 1)))
 ```
 
-# Principal Graphic
+# Principal Graphics
+
+## Initial Graphic with Log-linear Model
 
 This shows observed concentration of bifenthrin (on a wet weight basis)
-as a function of how much imperviousness is nearby.
+as a function of how much imperviousness is nearby. Here we use the
+estimate of percent imperviousness within 500 m of the sample location.
+`geom_smooth()` uses a simple linear model (implicitly on
+log-transformed y values), which is strongly influenced by the outliers.
+The next plot uses a more robust regression, which is probably more
+suitable.
 
 ``` r
 plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
   geom_point(aes(color = Bifenthrin_ND), size = 3) +
-  geom_smooth(method = 'lm', color = cbep_colors()[5],
-              fill = cbep_colors()[5], se = FALSE) +
- # geom_text(x=0.04, y=0.55, label = 'Yarmouth 2014', hjust = 0) +
- # geom_text(x=0.425, y=0.99, label = 'South Portland 2014', hjust = 1) +
+  geom_smooth(method = 'lm', color = cbep_colors()[5], se = FALSE) +
+  # geom_smooth(method = 'lm', formula = y ~ log(x),
+  #            color = cbep_colors()[6], se = FALSE) +
+  geom_text(aes(x=4, y=0.55, label = 'Yarmouth 2014'),
+            hjust = 0, size = 3) +
+  geom_text(aes(x=42.5, y=0.99, label = 'South Portland 2014'),
+            hjust = 1, size = 3) +
   
   theme_cbep() +
   theme(legend.position=c(0.75, 0.2)) +
   
   scale_color_manual(values = cbep_colors(), name = '',
-                     labels = c('Observed', 'Below Detection Limit')) +
+                     labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
   ylab('Bifenthrin (ng/g w/w)') +
-  xlab('Pct. Impervious w/in 500 m')
+  xlab('Percent Impervious w/in 500 m')
 plt
 ```
 
@@ -143,16 +166,7 @@ plt
 ![](Pesticide_Graphics_files/figure-gfm/plot_1-1.png)<!-- -->
 
 ``` r
-ggsave('BifenthrinWW.png', type = 'cairo', width = 7, height = 5)
-```
-
-    ## `geom_smooth()` using formula 'y ~ x'
-
-    ## Warning: Removed 4 rows containing non-finite values (stat_smooth).
-    
-    ## Warning: Removed 4 rows containing missing values (geom_point).
-
-``` r
+#ggsave('BifenthrinWW.png', type = 'cairo', width = 7, height = 5)
 ggsave('BifenthrinWW.pdf', device = cairo_pdf, width = 7, height = 5)
 ```
 
@@ -164,34 +178,14 @@ ggsave('BifenthrinWW.pdf', device = cairo_pdf, width = 7, height = 5)
 
 ## Related Linear Models
 
-Here are the details on the related linear models. BEcause ofthe two
-outliers, the detail here shoud be taken with a certain degree of
-skepticism.
+`geom_smooth()` implies a linear model, and we should examine whether it
+provides a robust analysis or not. Here we compare a linear model with a
+Theil-Sen slope estimate, which is far more resistant to outliers. Slope
+and intercept estimates are substantially different. Plotting the
+Theil-Sen line produces a line more aligned with the bulk of the data,
+and so id preferred i this setting.
 
-``` r
-the_lm <- lm(Bifenthrin_ML~pct500, data = conc_data)
-summary(the_lm)
-```
-
-    ## 
-    ## Call:
-    ## lm(formula = Bifenthrin_ML ~ pct500, data = conc_data)
-    ## 
-    ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -0.13943 -0.08234 -0.02162  0.00407  0.50624 
-    ## 
-    ## Coefficients:
-    ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)  0.01549    0.04395   0.352    0.728    
-    ## pct500       1.24947    0.23217   5.382 1.59e-05 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## Residual standard error: 0.1517 on 24 degrees of freedom
-    ##   (4 observations deleted due to missingness)
-    ## Multiple R-squared:  0.5468, Adjusted R-squared:  0.528 
-    ## F-statistic: 28.96 on 1 and 24 DF,  p-value: 1.587e-05
+### Linear Model
 
 ``` r
 the_lm <- lm(log10(Bifenthrin_ML)~pct500, data = conc_data)
@@ -203,45 +197,221 @@ summary(the_lm)
     ## lm(formula = log10(Bifenthrin_ML) ~ pct500, data = conc_data)
     ## 
     ## Residuals:
-    ##     Min      1Q  Median      3Q     Max 
-    ## -0.5005 -0.2420 -0.0221  0.1664  1.1019 
+    ##      Min       1Q   Median       3Q      Max 
+    ## -0.51553 -0.24516 -0.02199  0.16657  1.10149 
     ## 
     ## Coefficients:
-    ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept) -1.45193    0.09764 -14.870 1.31e-13 ***
-    ## pct500       3.20747    0.51578   6.219 2.00e-06 ***
+    ##              Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept) -1.452801   0.097831 -14.850 1.35e-13 ***
+    ## pct500       0.032095   0.005167   6.212 2.03e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.3369 on 24 degrees of freedom
+    ## Residual standard error: 0.3373 on 24 degrees of freedom
     ##   (4 observations deleted due to missingness)
-    ## Multiple R-squared:  0.6171, Adjusted R-squared:  0.6011 
-    ## F-statistic: 38.67 on 1 and 24 DF,  p-value: 1.995e-06
+    ## Multiple R-squared:  0.6165, Adjusted R-squared:  0.6006 
+    ## F-statistic: 38.59 on 1 and 24 DF,  p-value: 2.029e-06
 
-# Alternate Graphic
+### Theil-Sen Resistent Regression
+
+We use a resistant regression estimator, known as the Theil-Sen
+estimator, implemented (*inter alia*) as `mblm()` in the mblm package.
+Statistical significance for these tests can be a bit finicky in the
+case of tied values, which we have here, so we resort to testing
+significance of the closely related Kendall’s Tau correlation
+coefficient. In a more careful analysis, we might try permutation tests,
+or a bootstrap, but in this case, the results are highly significant by
+any test, so there is little point in being more precise.
+
+Unfortunately, the mblm package does not handle missing values or data
+transformations all that well, so we need to clean things up a bit.
 
 ``` r
-plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_QML)) +
+tmp <- conc_data %>%
+  filter(! is.na(pct500)) %>%
+  select(pct500, Bifenthrin_ND, Bifenthrin_ML, Bifenthrin_OC_QML) %>%
+  mutate(log_bifenthrin  = log(Bifenthrin_ML),
+         log_bifenthrin_oc = log(Bifenthrin_OC_QML))
+the_mblm <- mblm(log_bifenthrin~pct500, data = tmp)
+summary(the_mblm)
+```
+
+    ## Warning in wilcox.test.default(z$intercepts): cannot compute exact p-value with
+    ## ties
+
+    ## Warning in wilcox.test.default(z$slopes): cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(z$intercepts): cannot compute exact p-value with
+    ## ties
+
+    ## Warning in wilcox.test.default(z$slopes): cannot compute exact p-value with ties
+
+    ## 
+    ## Call:
+    ## mblm(formula = log_bifenthrin ~ pct500, dataframe = tmp)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -1.52057 -0.89120 -0.40064  0.05394  2.20897 
+    ## 
+    ## Coefficients:
+    ##             Estimate      MAD V value Pr(>|V|)    
+    ## (Intercept) -3.02041  0.15766       0 8.80e-06 ***
+    ## pct500       0.07472  0.02063     348 1.25e-05 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.8519 on 24 degrees of freedom
+
+``` r
+cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
+```
+
+    ## Warning in cor.test.default(tmp$pct500, tmp$log_bifenthrin, method = "kendall"):
+    ## Cannot compute exact p-value with ties
+
+    ## 
+    ##  Kendall's rank correlation tau
+    ## 
+    ## data:  tmp$pct500 and tmp$log_bifenthrin
+    ## z = 4.5874, p-value = 4.488e-06
+    ## alternative hypothesis: true tau is not equal to 0
+    ## sample estimates:
+    ##       tau 
+    ## 0.6541272
+
+We create a dataframe to pass to ggplot to generate the regression line
+in our plot
+
+``` r
+coefs <- coef(the_mblm)
+theline <- tibble(x = seq(0,42.5, .25),
+                  y = exp(coefs[[1]] + coefs[[2]]*seq(0,42.5, .25)))
+```
+
+### Showing the Resistant Regression
+
+``` r
+plt <- ggplot(tmp, aes(pct500, Bifenthrin_ML)) +
   geom_point(aes(color = Bifenthrin_ND), size = 3) +
-  geom_smooth(method = 'lm', color = cbep_colors()[5],
-              fill = cbep_colors()[5], se = FALSE) +
+  geom_line(data = theline, aes(x,y),
+            color = cbep_colors()[5],
+            lwd = 1) +
+  geom_text(aes(x=4, y=0.55, label = 'Yarmouth 2014'),
+            hjust = 0, size = 3) +
+  geom_text(aes(x=42.5, y=0.99, label = 'South Portland 2014'),
+            hjust = 1, size = 3) +
   
   theme_cbep() +
   theme(legend.position=c(0.75, 0.2)) +
   
   scale_color_manual(values = cbep_colors(), name = '',
-                     labels = c('Observed', 'Below Detection Limit')) +
+                     labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
-  ylab('Bifenthrin (ng/g OC)') +
-  xlab('Pct. Impervious w/in 500 m')
+  ylab('Bifenthrin (ng/g w/w)') +
+  xlab('Percent Impervious w/in 500 m')
 plt
 ```
 
-    ## `geom_smooth()` using formula 'y ~ x'
+![](Pesticide_Graphics_files/figure-gfm/resistant_regression_plot-1.png)<!-- -->
 
-    ## Warning: Removed 4 rows containing non-finite values (stat_smooth).
+``` r
+#ggsave('BifenthrinWW_Resistant.png', type = 'cairo', width = 7, height = 5)
+ggsave('BifenthrinWW_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
+```
+
+# Concentrations on an Organic Carbon Basis
+
+Toxicity of organic contaminants in sedimetn are often more highly
+correlated concentrations as a fraction of the organic carbon in the
+sample, rather than the mass fraction in the entire sample. Maine BEP
+toxicologist, Pam Breyer, used OC-based concentrations to evaluate
+whether levels of bifenthrin approached levels of concern, and concluded
+that they did not.
+
+In our context, looking at spatial patterns, rather than toxicity, it is
+not obvious which concentration basis makes better sense. Here we
+produce the OC-based graphic, for completeness, although we are unlikely
+to use it in the Report.
+
+``` r
+the_mblm <- mblm(log_bifenthrin_oc~pct500, data = tmp)
+summary(the_mblm)
+```
+
+    ## 
+    ## Call:
+    ## mblm(formula = log_bifenthrin_oc ~ pct500, dataframe = tmp)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -1.4553 -0.3425 -0.0673  0.3091  1.7132 
+    ## 
+    ## Coefficients:
+    ##             Estimate     MAD V value Pr(>|V|)    
+    ## (Intercept)  2.05676 0.16995     351 2.98e-08 ***
+    ## pct500       0.06177 0.01521     350 5.96e-08 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.6583 on 24 degrees of freedom
+
+``` r
+cor.test(tmp$pct500,tmp$log_bifenthrin_oc, method = 'kendall')
+```
+
+    ## Warning in cor.test.default(tmp$pct500, tmp$log_bifenthrin_oc, method =
+    ## "kendall"): Cannot compute exact p-value with ties
+
+    ## 
+    ##  Kendall's rank correlation tau
+    ## 
+    ## data:  tmp$pct500 and tmp$log_bifenthrin_oc
+    ## z = 4.2741, p-value = 1.919e-05
+    ## alternative hypothesis: true tau is not equal to 0
+    ## sample estimates:
+    ##       tau 
+    ## 0.6070653
+
+We again create a dataframe.
+
+``` r
+coefs <- coef(the_mblm)
+theline <- tibble(x = seq(0,42.5, .25),
+                  y = exp(coefs[[1]] + coefs[[2]]*seq(0,42.5, .25)))
+```
+
+``` r
+plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_QML)) +
+  geom_point(aes(color = Bifenthrin_ND), size = 3) +
+  geom_line(data = theline, aes(x,y),
+            color = cbep_colors()[5],
+            lwd = 1) +
+  geom_text(aes(x=4, y=53, label = 'Yarmouth 2014'),
+            hjust = 0, size = 3) +
+  #geom_text(aes(x=42.5, y=86, label = 'South Portland 2014'),
+  #          hjust = 1, size = 3) +
+  
+  theme_cbep() +
+  theme(legend.position=c(0.75, 0.2)) +
+  
+  scale_color_manual(values = cbep_colors(), name = '',
+                     labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
+  scale_y_log10() +
+  
+  ylab('Bifenthrin (ng/g OC)') +
+  xlab('Percent Impervious w/in 500 m')
+plt
+```
 
     ## Warning: Removed 4 rows containing missing values (geom_point).
 
-![](Pesticide_Graphics_files/figure-gfm/plot_2-1.png)<!-- -->
+![](Pesticide_Graphics_files/figure-gfm/plot_3-1.png)<!-- -->
+
+``` r
+#ggsave('BifenthrinOC_Resistant.png', type = 'cairo', width = 7, height = 5)
+ggsave('BifenthrinOC_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
+```
+
+    ## Warning: Removed 4 rows containing missing values (geom_point).
