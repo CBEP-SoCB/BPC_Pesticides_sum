@@ -109,7 +109,7 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
                      labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
-  ylab('Bifenthrin (ng/g w/w)') +
+  ylab('Bifenthrin (ng/g)') +
   xlab('Percent Impervious w/in 500 m')
 plt
 #ggsave('BifenthrinWW.png', type = 'cairo', width = 7, height = 5)
@@ -177,7 +177,7 @@ plt <- ggplot(tmp, aes(pct500, Bifenthrin_ML)) +
                      labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
-  ylab('Bifenthrin (ng/g w/w)') +
+  ylab('Bifenthrin (ng/g)') +
   xlab('Percent Impervious w/in 500 m')
 plt
 #ggsave('BifenthrinWW_Resistant.png', type = 'cairo', width = 7, height = 5)

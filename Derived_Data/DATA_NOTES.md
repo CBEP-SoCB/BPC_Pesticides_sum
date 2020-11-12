@@ -62,22 +62,22 @@ following steps (Some of these steps only speed up analysis).
    ArcGIS table of contents.
 
 2. We created a polygon that enclosed all of the Casco Bay sample locations and
-a 2000 meter buffer around each.  Because our version of the Impervious Cover
-layer is limited to Casco Bay Watershed Towns, we can not develop impervious
-cover statistics for nearby sites outside the watershed towns. 
+   a 2000 meter buffer around each.  Because our version of the Impervious Cover
+   layer is limited to Casco Bay Watershed Towns, we can not develop impervious
+   cover statistics for nearby sites outside the watershed towns. 
 
-3.  We used "Extract by Mask" to extract a smaller version of the impervious
-cover data for just our coastal region.  
+3. We used "Extract by Mask" to extract a smaller version of the impervious
+   cover data for just our coastal region.  
 
-4.  We used "Aggregate" to reduce the resolution of the impervious cover raster
-to a 5 meter resolution, summing the total impervious cover within the 5m x 5 m
-area, generating a raster with values from zero to 25. 
+4. We used "Aggregate" to reduce the resolution of the impervious cover raster
+   to a 5 meter resolution, summing the total impervious cover within the
+   5m x 5 m area, generating a raster with values from zero to 25. 
 
-54.  We used "Focal Statistics" to generate rasters that show the cumulative area
-of impervious cover (in meters) within 500 m, 1000m and 2000m. 
+5. We used "Focal Statistics" to generate rasters that show the cumulative area
+   of impervious cover (in meters) within 500 m, 1000m and 2000m. 
 
-6.  Finally, we extracted the values of the three rasters produced in step 4 at
-each of the sample locations.  We used  'Extract Multi Values to Points'. 
+6. Finally, we extracted the values of the three rasters produced in step 4 at
+   each of the sample locations.  We used  'Extract Multi Values to Points'. 
 
 7. Impervious cover data was exported in a text file "imperviousness.txt".
 

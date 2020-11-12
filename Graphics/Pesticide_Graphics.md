@@ -51,14 +51,14 @@ impervious surfaces (as a rough measure of urbanization).
 library(tidyverse)
 ```
 
-    ## -- Attaching packages ------------------------------------------------------------------- tidyverse 1.3.0 --
+    ## -- Attaching packages ----------------------------------------------------------------------------------- tidyverse 1.3.0 --
 
     ## v ggplot2 3.3.2     v purrr   0.3.4
     ## v tibble  3.0.3     v dplyr   1.0.2
     ## v tidyr   1.1.2     v stringr 1.4.0
     ## v readr   1.3.1     v forcats 0.5.0
 
-    ## -- Conflicts ---------------------------------------------------------------------- tidyverse_conflicts() --
+    ## -- Conflicts -------------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -152,7 +152,7 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
                      labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
-  ylab('Bifenthrin (ng/g w/w)') +
+  ylab('Bifenthrin (ng/g)') +
   xlab('Percent Impervious w/in 500 m')
 plt
 ```
@@ -197,20 +197,20 @@ summary(the_lm)
     ## lm(formula = log10(Bifenthrin_ML) ~ pct500, data = conc_data)
     ## 
     ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -0.51553 -0.24516 -0.02199  0.16657  1.10149 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -0.5114 -0.2328 -0.0219  0.1671  1.1020 
     ## 
     ## Coefficients:
     ##              Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept) -1.452801   0.097831 -14.850 1.35e-13 ***
-    ## pct500       0.032095   0.005167   6.212 2.03e-06 ***
+    ## (Intercept) -1.453417   0.097936 -14.840 1.37e-13 ***
+    ## pct500       0.032114   0.005172   6.209 2.04e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.3373 on 24 degrees of freedom
+    ## Residual standard error: 0.3377 on 24 degrees of freedom
     ##   (4 observations deleted due to missingness)
-    ## Multiple R-squared:  0.6165, Adjusted R-squared:  0.6006 
-    ## F-statistic: 38.59 on 1 and 24 DF,  p-value: 2.029e-06
+    ## Multiple R-squared:  0.6163, Adjusted R-squared:  0.6003 
+    ## F-statistic: 38.55 on 1 and 24 DF,  p-value: 2.043e-06
 
 ### Theil-Sen Resistent Regression
 
@@ -252,16 +252,16 @@ summary(the_mblm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -1.52057 -0.89120 -0.40064  0.05394  2.20897 
+    ## -1.51196 -0.86400 -0.40064  0.05394  2.20897 
     ## 
     ## Coefficients:
     ##             Estimate      MAD V value Pr(>|V|)    
     ## (Intercept) -3.02041  0.15766       0 8.80e-06 ***
-    ## pct500       0.07472  0.02063     348 1.25e-05 ***
+    ## pct500       0.07472  0.01665     348 1.25e-05 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.8519 on 24 degrees of freedom
+    ## Residual standard error: 0.853 on 24 degrees of freedom
 
 ``` r
 cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
@@ -274,11 +274,11 @@ cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
     ##  Kendall's rank correlation tau
     ## 
     ## data:  tmp$pct500 and tmp$log_bifenthrin
-    ## z = 4.5874, p-value = 4.488e-06
+    ## z = 4.3215, p-value = 1.55e-05
     ## alternative hypothesis: true tau is not equal to 0
     ## sample estimates:
     ##       tau 
-    ## 0.6541272
+    ## 0.6162068
 
 We create a dataframe to pass to ggplot to generate the regression line
 in our plot
@@ -309,7 +309,7 @@ plt <- ggplot(tmp, aes(pct500, Bifenthrin_ML)) +
                      labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
-  ylab('Bifenthrin (ng/g w/w)') +
+  ylab('Bifenthrin (ng/g)') +
   xlab('Percent Impervious w/in 500 m')
 plt
 ```
@@ -345,17 +345,17 @@ summary(the_mblm)
     ## mblm(formula = log_bifenthrin_oc ~ pct500, dataframe = tmp)
     ## 
     ## Residuals:
-    ##     Min      1Q  Median      3Q     Max 
-    ## -1.4553 -0.3425 -0.0673  0.3091  1.7132 
+    ##      Min       1Q   Median       3Q      Max 
+    ## -1.49875 -0.33848 -0.07348  0.31215  1.71569 
     ## 
     ## Coefficients:
     ##             Estimate     MAD V value Pr(>|V|)    
-    ## (Intercept)  2.05676 0.16995     351 2.98e-08 ***
-    ## pct500       0.06177 0.01521     350 5.96e-08 ***
+    ## (Intercept)  2.05440 0.17848     351 2.98e-08 ***
+    ## pct500       0.06173 0.01435     350 5.96e-08 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.6583 on 24 degrees of freedom
+    ## Residual standard error: 0.6595 on 24 degrees of freedom
 
 ``` r
 cor.test(tmp$pct500,tmp$log_bifenthrin_oc, method = 'kendall')
