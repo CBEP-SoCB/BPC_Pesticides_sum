@@ -197,20 +197,20 @@ summary(the_lm)
     ## lm(formula = log10(Bifenthrin_ML) ~ pct500, data = conc_data)
     ## 
     ## Residuals:
-    ##     Min      1Q  Median      3Q     Max 
-    ## -0.5114 -0.2328 -0.0219  0.1671  1.1020 
+    ##      Min       1Q   Median       3Q      Max 
+    ## -0.52071 -0.23908 -0.02186  0.16580  1.10061 
     ## 
     ## Coefficients:
     ##              Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept) -1.453417   0.097936 -14.840 1.37e-13 ***
-    ## pct500       0.032114   0.005172   6.209 2.04e-06 ***
+    ## (Intercept) -1.451785   0.097796 -14.845 1.36e-13 ***
+    ## pct500       0.032052   0.005165   6.206 2.06e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.3377 on 24 degrees of freedom
+    ## Residual standard error: 0.3372 on 24 degrees of freedom
     ##   (4 observations deleted due to missingness)
-    ## Multiple R-squared:  0.6163, Adjusted R-squared:  0.6003 
-    ## F-statistic: 38.55 on 1 and 24 DF,  p-value: 2.043e-06
+    ## Multiple R-squared:  0.6161, Adjusted R-squared:  0.6001 
+    ## F-statistic: 38.51 on 1 and 24 DF,  p-value: 2.058e-06
 
 ### Theil-Sen Resistent Regression
 
@@ -252,16 +252,16 @@ summary(the_mblm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -1.51196 -0.86400 -0.40064  0.05394  2.20897 
+    ## -1.53120 -0.87485 -0.40064  0.05394  2.20897 
     ## 
     ## Coefficients:
     ##             Estimate      MAD V value Pr(>|V|)    
-    ## (Intercept) -3.02041  0.15766       0 8.80e-06 ***
-    ## pct500       0.07472  0.01665     348 1.25e-05 ***
+    ## (Intercept) -3.02041  0.15766       0  8.8e-06 ***
+    ## pct500       0.07472  0.01640     347  1.4e-05 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.853 on 24 degrees of freedom
+    ## Residual standard error: 0.8513 on 24 degrees of freedom
 
 ``` r
 cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
@@ -274,11 +274,11 @@ cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
     ##  Kendall's rank correlation tau
     ## 
     ## data:  tmp$pct500 and tmp$log_bifenthrin
-    ## z = 4.3215, p-value = 1.55e-05
+    ## z = 4.3658, p-value = 1.267e-05
     ## alternative hypothesis: true tau is not equal to 0
     ## sample estimates:
     ##       tau 
-    ## 0.6162068
+    ## 0.6225269
 
 We create a dataframe to pass to ggplot to generate the regression line
 in our plot
@@ -323,7 +323,7 @@ ggsave('BifenthrinWW_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
 
 # Concentrations on an Organic Carbon Basis
 
-Toxicity of organic contaminants in sedimetn are often more highly
+Toxicity of organic contaminants in sediment are often more highly
 correlated concentrations as a fraction of the organic carbon in the
 sample, rather than the mass fraction in the entire sample. Maine BEP
 toxicologist, Pam Breyer, used OC-based concentrations to evaluate
@@ -346,16 +346,16 @@ summary(the_mblm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -1.49875 -0.33848 -0.07348  0.31215  1.71569 
+    ## -1.45609 -0.34276 -0.07628  0.30884  1.71294 
     ## 
     ## Coefficients:
     ##             Estimate     MAD V value Pr(>|V|)    
-    ## (Intercept)  2.05440 0.17848     351 2.98e-08 ***
-    ## pct500       0.06173 0.01435     350 5.96e-08 ***
+    ## (Intercept)  2.05700 0.17470     351 2.98e-08 ***
+    ## pct500       0.06177 0.01463     350 5.96e-08 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.6595 on 24 degrees of freedom
+    ## Residual standard error: 0.6559 on 24 degrees of freedom
 
 ``` r
 cor.test(tmp$pct500,tmp$log_bifenthrin_oc, method = 'kendall')

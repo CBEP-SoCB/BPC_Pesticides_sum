@@ -185,7 +185,7 @@ ggsave('BifenthrinWW_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
 ```
 
 # Concentrations on an Organic Carbon Basis
-Toxicity of organic contaminants in sedimetn are often more highly correlated
+Toxicity of organic contaminants in sediment are often more highly correlated
 concentrations as a fraction of the organic carbon in the sample, rather than 
 the mass fraction in the entire sample.  Maine BEP toxicologist, Pam Breyer,
 used OC-based concentrations to evaluate whether levels of bifenthrin approached
