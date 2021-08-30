@@ -3,25 +3,25 @@ Prepare Sediment Bifenthrin Graphics
 Curtis C. Bohlen, Casco Bay Estuary Partnership.
 Revised October 13, 2020
 
-  - [Introduction](#introduction)
-  - [Load Libraries](#load-libraries)
-  - [Load Data](#load-data)
-      - [Folder References](#folder-references)
-      - [Load IC Data](#load-ic-data)
-      - [Load Pyrethroid Concentration
+-   [Introduction](#introduction)
+-   [Load Libraries](#load-libraries)
+-   [Load Data](#load-data)
+    -   [Folder References](#folder-references)
+    -   [Load IC Data](#load-ic-data)
+    -   [Load Pyrethroid Concentration
         Data](#load-pyrethroid-concentration-data)
-  - [Import IC metrics into
+-   [Import IC metrics into
     conc\_data](#import-ic-metrics-into-conc_data)
-  - [Principal Graphics](#principal-graphics)
-      - [Initial Graphic with Log-linear
+-   [Principal Graphics](#principal-graphics)
+    -   [Initial Graphic with Log-linear
         Model](#initial-graphic-with-log-linear-model)
-      - [Related Linear Models](#related-linear-models)
-          - [Linear Model](#linear-model)
-          - [Theil-Sen Resistent
+    -   [Related Linear Models](#related-linear-models)
+        -   [Linear Model](#linear-model)
+        -   [Theil-Sen Resistent
             Regression](#theil-sen-resistent-regression)
-          - [Showing the Resistant
+        -   [Showing the Resistant
             Regression](#showing-the-resistant-regression)
-  - [Concentrations on an Organic Carbon
+-   [Concentrations on an Organic Carbon
     Basis](#concentrations-on-an-organic-carbon-basis)
 
 <img
@@ -51,14 +51,22 @@ impervious surfaces (as a rough measure of urbanization).
 library(tidyverse)
 ```
 
-    ## -- Attaching packages ----------------------------------------------------------------------------------- tidyverse 1.3.0 --
+    ## Warning: package 'tidyverse' was built under R version 4.0.5
 
-    ## v ggplot2 3.3.2     v purrr   0.3.4
-    ## v tibble  3.0.3     v dplyr   1.0.2
-    ## v tidyr   1.1.2     v stringr 1.4.0
-    ## v readr   1.3.1     v forcats 0.5.0
+    ## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
 
-    ## -- Conflicts -------------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## v ggplot2 3.3.3     v purrr   0.3.4
+    ## v tibble  3.1.2     v dplyr   1.0.6
+    ## v tidyr   1.1.3     v stringr 1.4.0
+    ## v readr   1.4.0     v forcats 0.5.1
+
+    ## Warning: package 'tidyr' was built under R version 4.0.5
+
+    ## Warning: package 'dplyr' was built under R version 4.0.5
+
+    ## Warning: package 'forcats' was built under R version 4.0.5
+
+    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -148,7 +156,7 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
   theme_cbep() +
   theme(legend.position=c(0.75, 0.2)) +
   
-  scale_color_manual(values = cbep_colors(), name = '',
+  scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
                      labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
@@ -173,7 +181,7 @@ ggsave('BifenthrinWW.pdf', device = cairo_pdf, width = 7, height = 5)
     ## `geom_smooth()` using formula 'y ~ x'
 
     ## Warning: Removed 4 rows containing non-finite values (stat_smooth).
-    
+
     ## Warning: Removed 4 rows containing missing values (geom_point).
 
 ## Related Linear Models
@@ -198,19 +206,19 @@ summary(the_lm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -0.52071 -0.23908 -0.02186  0.16580  1.10061 
+    ## -0.51492 -0.23495 -0.02174  0.16757  1.10260 
     ## 
     ## Coefficients:
     ##              Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept) -1.451785   0.097796 -14.845 1.36e-13 ***
-    ## pct500       0.032052   0.005165   6.206 2.06e-06 ***
+    ## (Intercept) -1.454017   0.098072 -14.826 1.40e-13 ***
+    ## pct500       0.032131   0.005179   6.203 2.07e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.3372 on 24 degrees of freedom
+    ## Residual standard error: 0.3381 on 24 degrees of freedom
     ##   (4 observations deleted due to missingness)
-    ## Multiple R-squared:  0.6161, Adjusted R-squared:  0.6001 
-    ## F-statistic: 38.51 on 1 and 24 DF,  p-value: 2.058e-06
+    ## Multiple R-squared:  0.6159, Adjusted R-squared:  0.5999 
+    ## F-statistic: 38.48 on 1 and 24 DF,  p-value: 2.07e-06
 
 ### Theil-Sen Resistent Regression
 
@@ -252,16 +260,16 @@ summary(the_mblm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -1.53120 -0.87485 -0.40064  0.05394  2.20897 
+    ## -1.52109 -0.87019 -0.40064  0.05394  2.20897 
     ## 
     ## Coefficients:
     ##             Estimate      MAD V value Pr(>|V|)    
-    ## (Intercept) -3.02041  0.15766       0  8.8e-06 ***
-    ## pct500       0.07472  0.01640     347  1.4e-05 ***
+    ## (Intercept) -3.02041  0.15766       0 8.80e-06 ***
+    ## pct500       0.07472  0.01710     348 1.25e-05 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.8513 on 24 degrees of freedom
+    ## Residual standard error: 0.8544 on 24 degrees of freedom
 
 ``` r
 cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
@@ -274,11 +282,11 @@ cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
     ##  Kendall's rank correlation tau
     ## 
     ## data:  tmp$pct500 and tmp$log_bifenthrin
-    ## z = 4.3658, p-value = 1.267e-05
+    ## z = 4.2328, p-value = 2.308e-05
     ## alternative hypothesis: true tau is not equal to 0
     ## sample estimates:
     ##       tau 
-    ## 0.6225269
+    ## 0.6035667
 
 We create a dataframe to pass to ggplot to generate the regression line
 in our plot
@@ -305,7 +313,7 @@ plt <- ggplot(tmp, aes(pct500, Bifenthrin_ML)) +
   theme_cbep() +
   theme(legend.position=c(0.75, 0.2)) +
   
-  scale_color_manual(values = cbep_colors(), name = '',
+  scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
                      labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
@@ -346,16 +354,16 @@ summary(the_mblm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -1.45609 -0.34276 -0.07628  0.30884  1.71294 
+    ## -1.48454 -0.29097 -0.06823  0.33060  1.71681 
     ## 
     ## Coefficients:
     ##             Estimate     MAD V value Pr(>|V|)    
-    ## (Intercept)  2.05700 0.17470     351 2.98e-08 ***
-    ## pct500       0.06177 0.01463     350 5.96e-08 ***
+    ## (Intercept)  2.05783 0.16835     351 2.98e-08 ***
+    ## pct500       0.06026 0.01432     350 5.96e-08 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.6559 on 24 degrees of freedom
+    ## Residual standard error: 0.6576 on 24 degrees of freedom
 
 ``` r
 cor.test(tmp$pct500,tmp$log_bifenthrin_oc, method = 'kendall')
@@ -396,7 +404,7 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_QML)) +
   theme_cbep() +
   theme(legend.position=c(0.75, 0.2)) +
   
-  scale_color_manual(values = cbep_colors(), name = '',
+  scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
                      labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
