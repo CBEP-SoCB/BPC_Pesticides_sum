@@ -156,7 +156,7 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
   theme_cbep() +
   theme(legend.position=c(0.75, 0.2)) +
   
-  scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
+  scale_color_manual(values = cbep_colors(), name = '',
                      labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
   scale_y_log10() +
   
@@ -206,19 +206,19 @@ summary(the_lm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -0.51492 -0.23495 -0.02174  0.16757  1.10260 
+    ## -0.50209 -0.24093 -0.02212  0.16717  1.10220 
     ## 
     ## Coefficients:
     ##              Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept) -1.454017   0.098072 -14.826 1.40e-13 ***
-    ## pct500       0.032131   0.005179   6.203 2.07e-06 ***
+    ## (Intercept) -1.453613   0.097844 -14.856 1.34e-13 ***
+    ## pct500       0.032130   0.005167   6.218 2.00e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.3381 on 24 degrees of freedom
+    ## Residual standard error: 0.3374 on 24 degrees of freedom
     ##   (4 observations deleted due to missingness)
-    ## Multiple R-squared:  0.6159, Adjusted R-squared:  0.5999 
-    ## F-statistic: 38.48 on 1 and 24 DF,  p-value: 2.07e-06
+    ## Multiple R-squared:  0.617,  Adjusted R-squared:  0.601 
+    ## F-statistic: 38.66 on 1 and 24 DF,  p-value: 1.999e-06
 
 ### Theil-Sen Resistent Regression
 
@@ -260,16 +260,16 @@ summary(the_mblm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -1.52109 -0.87019 -0.40064  0.05394  2.20897 
+    ## -1.49063 -0.88305 -0.40064  0.05394  2.20897 
     ## 
     ## Coefficients:
     ##             Estimate      MAD V value Pr(>|V|)    
-    ## (Intercept) -3.02041  0.15766       0 8.80e-06 ***
-    ## pct500       0.07472  0.01710     348 1.25e-05 ***
+    ## (Intercept) -3.02041  0.15766       0 8.79e-06 ***
+    ## pct500       0.07472  0.01641     348 1.25e-05 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.8544 on 24 degrees of freedom
+    ## Residual standard error: 0.8523 on 24 degrees of freedom
 
 ``` r
 cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
@@ -282,11 +282,11 @@ cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
     ##  Kendall's rank correlation tau
     ## 
     ## data:  tmp$pct500 and tmp$log_bifenthrin
-    ## z = 4.2328, p-value = 2.308e-05
+    ## z = 4.6317, p-value = 3.626e-06
     ## alternative hypothesis: true tau is not equal to 0
     ## sample estimates:
     ##       tau 
-    ## 0.6035667
+    ## 0.6604473
 
 We create a dataframe to pass to ggplot to generate the regression line
 in our plot
@@ -354,16 +354,16 @@ summary(the_mblm)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -1.48454 -0.29097 -0.06823  0.33060  1.71681 
+    ## -1.48013 -0.34096 -0.07244  0.31063  1.71474 
     ## 
     ## Coefficients:
     ##             Estimate     MAD V value Pr(>|V|)    
-    ## (Intercept)  2.05783 0.16835     351 2.98e-08 ***
-    ## pct500       0.06026 0.01432     350 5.96e-08 ***
+    ## (Intercept)  2.05520 0.17771     351 2.98e-08 ***
+    ## pct500       0.06177 0.01462     350 5.96e-08 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.6576 on 24 degrees of freedom
+    ## Residual standard error: 0.6594 on 24 degrees of freedom
 
 ``` r
 cor.test(tmp$pct500,tmp$log_bifenthrin_oc, method = 'kendall')
@@ -376,11 +376,11 @@ cor.test(tmp$pct500,tmp$log_bifenthrin_oc, method = 'kendall')
     ##  Kendall's rank correlation tau
     ## 
     ## data:  tmp$pct500 and tmp$log_bifenthrin_oc
-    ## z = 4.2741, p-value = 1.919e-05
+    ## z = 4.3184, p-value = 1.571e-05
     ## alternative hypothesis: true tau is not equal to 0
     ## sample estimates:
     ##       tau 
-    ## 0.6070653
+    ## 0.6133562
 
 We again create a dataframe.
 
