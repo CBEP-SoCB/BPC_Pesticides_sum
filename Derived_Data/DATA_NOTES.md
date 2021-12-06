@@ -37,7 +37,7 @@ Sediment Samples data, to facilitate analysis and joining tabular to GIS data.
 GIS location estimates for sample collection were derived from lat-long data in
 the excel and text files. We assumed geographic locations of samples were
 collected in the fields using GPS (as was true for sampling that CBEP staff
-supported in 2015), and thus are all expressed is in WGS 1984 coordinates.
+supported in 2015), and thus are all expressed in WGS 1984 coordinates.
 
 1.  Data including spatial coordinates were exported to /*.txt files.  
 2.  Sediment Location Files data was converted to Shapefiles using python  
@@ -58,7 +58,7 @@ the Casco Bay watershed towns in our GIS data archives. Analysis followed the
 following steps (Some of these steps only speed up analysis). 
 
 1. Town by town IC data in a Data Catalog were assembled into a large `tif` 
-   file using the "Mosaic Raster Catalog"  item from teh context menu fro the
+   file using the "Mosaic Raster Catalog"  item from the context menu from the
    ArcGIS table of contents.
 
 2. We created a polygon that enclosed all of the Casco Bay sample locations and
@@ -81,7 +81,7 @@ following steps (Some of these steps only speed up analysis).
 
 7. Impervious cover data was exported in a text file "imperviousness.txt".
 
-Calculation of "percent imperviousness" values wwas conducted in the R notebook,
+Calculation of "percent imperviousness" values was conducted in the R notebook,
 `Prepare_)Data.Rmd`. The percent imperviousness values are based on the TOTAL
 area of a circle with the specified radius of each sampling location, not the
 LAND area within that radius.  We believe that method provides a better synoptic
