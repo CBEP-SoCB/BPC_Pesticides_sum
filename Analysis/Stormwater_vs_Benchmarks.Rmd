@@ -12,12 +12,18 @@ output:
     style="position:absolute;top:10px;right:50px;" />
 
 # Introduction
-in 2015, the BPC collected stormwater samples from streams and storm drain outfalls near where sediment samples were collected in 2014. These samples were analyzed both for pyrethroids and for a comprehensive list of 101 pesticides (see 'Anylate_Lists_2015.xlsx'), including insecticides, herbicides, and fungicides.  The list of pesticides does not include banned organochlorine pesticides like DDT and chlordane, but focuses on pesticides in present-day use, many of which are thought to have relatively short lifespans in the aquatic environment.  
+In 2015, the BPC collected stormwater samples from streams and storm drain
+outfalls near where sediment samples were collected in 2014. These samples were
+analyzed both for pyrethroids and for a comprehensive list of 101 pesticides
+(see 'Anylate_Lists_2015.xlsx'), including insecticides, herbicides, and
+fungicides.  The list of pesticides does not include banned organochlorine
+pesticides like DDT and chlordane, but focuses on pesticides in present-day use,
+many of which are thought to have relatively short lifespans in the aquatic
+environment.
 
 # Load Libraries
 ```{r load_libraries}
 library(tidyverse)
-
 ```
 
 # Load Data
@@ -37,7 +43,10 @@ storm_data <- read.delim(fpath, skip = 1)
 ```
 
 ### What Pesticides Were Detected in Stormwater?
-Because the two laboratories used different methods for reporting their results, some of these are below detection limits, an some are below reporting limits.  This serves only as a GENRAL indication of the number of detections for each pesticide.
+Because the two laboratories used different methods for reporting their results,
+some of these are below detection limits, an some are below reporting limits.
+This serves only as a *GENRAL**general** indication of the number of 
+detections for each pesticide.
 ```{r detections}
 Pesticides <- tibble(Pesticide = names(storm_data)) %>%
   filter(! grepl('ND', Pesticide))  %>%
@@ -45,11 +54,17 @@ Pesticides <- tibble(Pesticide = names(storm_data)) %>%
   filter(c(rep(FALSE,2),rep(TRUE,15))) %>%
  mutate(Pesticide = if_else(Pesticide == 'twofourD', '2,4 D', Pesticide)) %>%
   pull(Pesticide)
-knitr:: kable(Pesticides, col.names = c('Pesticide'), caption = 'Pesticides Detected in Stormwater Entering Casco Bay, 2015 BPC Stormwater Study')
-
+knitr:: kable(Pesticides, col.names = c('Pesticide'), 
+              caption = 'Pesticides Detected in Stormwater Entering Casco Bay, 2015 BPC Stormwater Study')
 ```
-### Maximum Observed Value and Approcximate Number of Detections 
-Because of the way the two laboratories reported results, these are not strictly consistent, but they provide a rough idea of relative abundance of detects.  Number of detects is slightly higher for the first few pesticides because Montana Laboratory gave the value "Q" for values above detection limit but below reporting limit, while the other laboratory offered estimated values, flagged with "J".
+
+### Maximum Observed Value and Approximate Number of Detections 
+Because of the way the two laboratories reported results, these are not strictly
+consistent, but they provide a rough idea of relative abundance of detects.
+Number of detects is slightly higher for the first few pesticides because
+Montana Laboratory gave the value "Q" for values above detection limit but below
+reporting limit, while the other laboratory offered estimated values, flagged
+with "J".
 
 The  primary pesticides of concern (based on number of detects) are
 *  2,4 D
@@ -68,7 +83,6 @@ fn    <- 'Aquatic_Life_Benchmarks.txt'
 fpath <- file.path(sibling,fn)
 
 ALB_data <- read.delim(fpath, skip=1) %>% select (-Comment)
-
 ```
 
 # Summary of Caso Bay Observations
@@ -82,9 +96,12 @@ part1 <- storm_data %>% select(contains('ND')) %>%
   rename(Detects = V1) %>%
  rownames_to_column('Pesticide')
 
-part1 <- part1 %>% filter(Pesticide %in% c('2,4 D', 'Imidacloprid', 'MCPP', 'Metolachlor', 'Bifenthrin', 'Fipronil'))
+part1 <- part1 %>% filter(Pesticide %in% c('2,4 D', 'Imidacloprid', 'MCPP', 
+                                           'Metolachlor', 'Bifenthrin',
+                                           'Fipronil'))
 
-part2 <- storm_data %>% select(twofourD, Imidacloprid, MCPP, Metolachlor, Bifenthrin, Fipronil) %>%
+part2 <- storm_data %>% select(twofourD, Imidacloprid, MCPP, Metolachlor, 
+                               Bifenthrin, Fipronil) %>%
   mutate(Fipronil = Fipronil / 1000) %>%    # Adjust Units (measured in ng/l)
   summarize_all(function (x) max(x)) %>%
   rename(`2,4 D` = twofourD) %>%
@@ -93,7 +110,8 @@ part2 <- storm_data %>% select(twofourD, Imidacloprid, MCPP, Metolachlor, Bifent
   rename(`Maximum Concentration` = V1) %>%
   rownames_to_column('Pesticide')
 
-sum_data <- bind_cols(part1, part2) %>% select(-3) %>% rename(Pesticide = Pesticide...1)
+sum_data <- bind_cols(part1, part2) %>% select(-3) %>% 
+  rename(Pesticide = Pesticide...1)
 
 
 options(knitr.kable.NA = '')
@@ -101,12 +119,12 @@ left_join(sum_data, ALB_data, by= 'Pesticide') %>%
   knitr::kable(align = "rccrrcccccc", format.args = list(scientific=FALSE))
 ```
 
-
 # Results
+*  The MAXIMUM observed stormwater concentration of Imidacloprid exceeds the 
+CHRONIC aquatic invertebrate benchmark.  So does the detection limit....  
+*  The MAXIMUM observed stormwater concentration of Bifenthrin exceeds the 
+CHRONIC aquatic invertebrate benchmark.  So does the detection limit....  
 
-*  The MAXIMUM observed stormwater concentration of Imidacloprid exceeds the CHRONIC aquatic invertebrate benchmark.  So does the detection limit....
-*  The MAXIMUM observed stormwater concentration of Bifenthrin exceeds the CHRONIC aquatic invertebrate benchmark.  So does the detection limit....
-
-In both cases, since these are storm event samples, it is hard to know whether these elevated concentrations are persistent or not.  The observed values are all below the realted ACUTE benchmarks (by about a factor of 3).
-
-
+In both cases, since these are storm event samples, it is hard to know whether
+these elevated concentrations are persistent or not.  The observed values are
+all below the related **acute** benchmarks (by about a factor of 3).

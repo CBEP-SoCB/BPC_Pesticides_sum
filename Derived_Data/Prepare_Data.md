@@ -1,22 +1,22 @@
-Load Pesticides Data And Report out SUmamry Bifenthrin Data
+Load Pesticides Data And Report out Summary Bifenthrin Data
 ================
 Curtis C. Bohlen, Casco Bay Estuary Partnership
 
-  - [Introduction](#introduction)
-      - [Sediment Data](#sediment-data)
-      - [Stormwater Samples](#stormwater-samples)
-  - [Load Libraries](#load-libraries)
-  - [Load Data](#load-data)
-      - [File References](#file-references)
-      - [Load IC Data](#load-ic-data)
-      - [Load Pyrethroid Concentration
+-   [Introduction](#introduction)
+    -   [Sediment Data](#sediment-data)
+    -   [Stormwater Samples](#stormwater-samples)
+-   [Load Libraries](#load-libraries)
+-   [Load Data](#load-data)
+    -   [File References](#file-references)
+    -   [Load IC Data](#load-ic-data)
+    -   [Load Pyrethroid Concentration
         Data](#load-pyrethroid-concentration-data)
-      - [Load Stormwater Data](#load-stormwater-data)
-  - [Calculate Sediment Site Bifenthrin
+    -   [Load Stormwater Data](#load-stormwater-data)
+-   [Calculate Sediment Site Bifenthrin
     Averages](#calculate-sediment-site-bifenthrin-averages)
-      - [Correlations](#correlations)
-      - [Export summary table](#export-summary-table)
-  - [Import IC metrics into
+    -   [Correlations](#correlations)
+    -   [Export summary table](#export-summary-table)
+-   [Import IC metrics into
     conc\_data](#import-ic-metrics-into-conc_data)
 
 <img
@@ -50,7 +50,7 @@ measure of urbanization).
 
 ## Stormwater Samples
 
-in 2015, the BPC collected stormwater samples from streams and storm
+In 2015, the BPC collected stormwater samples from streams and storm
 drain outfalls near where sediment samples were collected in 2014. These
 samples were analyzed both for pyrethroids and for a comprehensive list
 of 101 pesticides (see ‘Anylate\_Lists\_2010.xlsx’), including
@@ -65,20 +65,32 @@ have relatively short lifespans in the aquatic environment.
 library(tidyverse)
 ```
 
-    ## -- Attaching packages ------------------------------------------------------------------- tidyverse 1.3.0 --
+    ## Warning: package 'tidyverse' was built under R version 4.0.5
 
-    ## v ggplot2 3.3.2     v purrr   0.3.4
-    ## v tibble  3.0.3     v dplyr   1.0.2
-    ## v tidyr   1.1.2     v stringr 1.4.0
-    ## v readr   1.3.1     v forcats 0.5.0
+    ## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
 
-    ## -- Conflicts ---------------------------------------------------------------------- tidyverse_conflicts() --
+    ## v ggplot2 3.3.5     v purrr   0.3.4
+    ## v tibble  3.1.6     v dplyr   1.0.7
+    ## v tidyr   1.1.4     v stringr 1.4.0
+    ## v readr   2.1.0     v forcats 0.5.1
+
+    ## Warning: package 'ggplot2' was built under R version 4.0.5
+
+    ## Warning: package 'tidyr' was built under R version 4.0.5
+
+    ## Warning: package 'dplyr' was built under R version 4.0.5
+
+    ## Warning: package 'forcats' was built under R version 4.0.5
+
+    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
 ``` r
 library(GGally)
 ```
+
+    ## Warning: package 'GGally' was built under R version 4.0.5
 
     ## Registered S3 method overwritten by 'GGally':
     ##   method from   
@@ -103,13 +115,13 @@ storm_fn <- 'BPC_2015_Stormwater_Data.txt'
 
 ## Load IC Data
 
-Note that the total IC coverage listed includes IC withing the
-designated radius of the sample point. Since each sample point is on a
-shoreline, a portion of that circle lies in the ocean, and is not on
-land. Thus the percent imperviousness calculated here (based on the
-TOTAL area of those circles, not the LAND area within those circles)
-underestimates local IC, but provides a better estimate of the potential
-impact orf overall urbanization on local conditions.
+Note that the total IC coverage listed includes IC within the designated
+radius of the sample point. Since each sample point is on a shoreline, a
+portion of that circle lies in the ocean, and is not on land. Thus the
+percent imperviousness calculated here (based on the TOTAL area of those
+circles, not the LAND area within those circles) underestimates local
+IC, but provides a better estimate of the potential impact of overall
+urbanization on local conditions.
 
 ``` r
 ic_data <- read.delim(geogr_fn, sep = ',') %>%
