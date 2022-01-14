@@ -1,7 +1,7 @@
 ---
-title: "Prepare Sediment Bifenthrin Graphics"
+title: "Bifenthrin Regression Models"
 author: "Curtis C. Bohlen, Casco Bay Estuary Partnership."
-date: "Revised October 13, 2020"
+date: "Updated January 13, 2022"
 output:
   github_document:
     toc: true
@@ -37,7 +37,7 @@ measure of urbanization).
 ```{r load_libraries}
 library(tidyverse)
 library(mblm)
-
+library(robustbase)  # could also use robust, or several others....
 library(CBEPgraphics)
 load_cbep_fonts()
 theme_set(theme_cbep())
@@ -52,18 +52,13 @@ sibfldnm <- 'Data'
 parent   <- dirname(getwd())
 sibling  <- file.path(parent,sibfldnm)
 
-dir.create(file.path(getwd(), 'figures'), showWarnings = FALSE)
+#dir.create(file.path(getwd(), 'figures'), showWarnings = FALSE)
 
 conc_fn <- 'BPC_2014_2015_Sediment_Data.txt'
 geogr_fn <- 'imperviousness.txt'
 ```
 
 ## Load IC Data
-Calculation of "percent imperviousness" values are based on the TOTAL area of a
-circle with the specified radius (500 m, of each sampling location, not the LAND area
-within that radius.  We believe that method provides a better synoptic
-assessment of urbanization near sampling locations.
-
 ```{r ic_data}
 ic_data <- read.delim(file.path(sibling, geogr_fn), sep = ',') %>%
   select(-OBJECTID, -Latitude, -Longitude) %>%
@@ -98,61 +93,59 @@ conc_data <- conc_data %>%
   mutate(across(starts_with('pct'), ~ round(.x * 100, 1)))
 ```
 
-# Principal Graphics
-## Initial Graphic with Log-linear Model
-This shows observed concentration of bifenthrin (on a wet weight basis) as a
-function of how much imperviousness is nearby.  Here we use the estimate of
-percent imperviousness within 500 m of the sample location. `geom_smooth()` 
-uses a simple linear model (implicitly on log-transformed y values), which is
-strongly influenced by the outliers. The next plot uses a more robust
-regression, which is probably more suitable.
 
-```{r plot_1}
-plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
-  geom_point(aes(color = Bifenthrin_ND), size = 3) +
-  geom_smooth(method = 'lm', color = cbep_colors()[5], se = FALSE) +
-  # geom_smooth(method = 'lm', formula = y ~ log(x),
-  #            color = cbep_colors()[6], se = FALSE) +
-  geom_text(aes(x=4, y=0.55, label = 'Yarmouth 2014'),
-            hjust = 0, size = 3) +
-  geom_text(aes(x=42.5, y=0.99, label = 'South Portland 2014'),
-            hjust = 1, size = 3) +
-  
-  theme_cbep(base_size = 12) +
-  theme(legend.position=c(0.75, 0.2)) +
-  
-  scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
-                     labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
-  scale_y_log10() +
-  
-  ylab('Bifenthrin (ng/g)') +
-  xlab('Percent Impervious w/in 500 m')
-plt
-ggsave('figures/Bifenthrin.pdf', device = cairo_pdf, width = 7, height = 5)
+##  Log-linear Model
+Although we have previously noted correlations with moisture and sand in
+the sediment samples, we don't see either of those turning up as significant in 
+a model that includes imperviousness.
+
+```{r lm}
+the_lm <- lm(log10(Bifenthrin_ML)~pct500 * Sand * Moisture, data = conc_data)
+step_lm <- step(the_lm)
+summary(step_lm)
 ```
 
-## Related Linear Models
-`geom_smooth()` implies a linear model, and we should examine whether it
-provides a robust analysis or not.  Here we compare a linear model with a
-Theil-Sen slope estimate, which is far more resistant to outliers. Slope and
-intercept estimates are substantially different.  Plotting the Theil-Sen
-line produces a line more aligned with the bulk of the data, and so is 
-preferred in this setting.
+So moisture is  meaningful predictor, but it is colinear with sand, 
+confounding a simple linear model.  The interaction is not significant.
+It is interesting that the coefficient with moisture in POSITIVE, meaning
+sediments containing more moisture tend to hold more bifenthrin.
 
-### Linear Model
-```{r lm2}
-the_lm <- lm(log10(Bifenthrin_ML)~pct500, data = conc_data)
-summary(the_lm)
+## Robust Regression
+Because of the non-detects and possible outliers. we do not trust the linear
+model al lthat much, so we compare results briefly with a robust linear model
+based on M estimators. (M estimators downweight "outliers" in a systematic way, 
+making the regression less sensitive to data that falls far away from the 
+regression line).  
+
+Limited exploration of other model structures suggest sand is sometimes a 
+valuable predictor in a robust model setting when interactions between Sand
+and Moisture are included.  But that complicates interpretation, for little
+explanatory gain.  We stick with models without interaction terms.
+
+```{r rob_reg}
+the_lmrob <- lmrob(log10(Bifenthrin_ML)~pct500 + Sand + Moisture, data = conc_data)
+summary(the_lmrob)
 ```
 
-### Theil-Sen Resistent Regression
-We use a resistant regression estimator, known as the Theil-Sen estimator,
-implemented (*inter alia*) as `mblm()` in the mblm package. Statistical
-significance for these tests can be a bit finicky in the case of tied values, 
-which we have here, so we resort to testing significance of the closely related 
-Kendall's Tau correlation coefficient. In a more careful analysis, we might try
-permutation tests, or a bootstrap, but in this case, the results are highly
-significant by any test, so there is little point in being more precise.
+So, in a robust setting, moisture remains an effective predictor, and the
+model does a considerably better job of predicting the data.
+
+In practice, however, we want to show the relationship between impervious 
+surfaces and bifenthrin. We can show that most 
+
+
+## Theil-Sen Resistent Regression
+We use a simpler resistant regression estimator, known as the Theil-Sen 
+estimator (Actually a modification due to Seigal), implemented (*inter alia*) as
+`mblm()` in the mblm package. This regression method can only handle a single
+predictor, which in this case if the degree of nearby imperviousness.
+
+Statistical significance for these tests can be a bit finicky in the case of
+tied values, which we have here, so we resort to testing significance of the
+closely related Kendall's Tau correlation coefficient. In a more careful
+analysis, we might try permutation tests, or a bootstrap, but in this case, the
+results are highly significant by any test, so there is little point in being
+more precise.
 
 Unfortunately, the mblm package does not handle missing values or data
 transformations all that well, so we need to clean things up a bit.
@@ -160,13 +153,14 @@ transformations all that well, so we need to clean things up a bit.
 ```{r mblm}
 tmp <- conc_data %>%
   filter(! is.na(pct500)) %>%
-  select(pct500, Bifenthrin_ND, Bifenthrin_ML, Bifenthrin_OC_QML) %>%
+  select(pct500, Bifenthrin_ND, Bifenthrin_ML, Bifenthrin_OC_QML, Sand, Moisture) %>%
   mutate(log_bifenthrin  = log(Bifenthrin_ML),
          log_bifenthrin_oc = log(Bifenthrin_OC_QML))
-the_mblm <- mblm(log_bifenthrin~pct500, data = tmp)
+
 ```
 
 ```{r}
+the_mblm <- mblm(log_bifenthrin~pct500, data = tmp)
 summary(the_mblm)
 cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
 ```
@@ -202,34 +196,7 @@ plt <- ggplot(tmp, aes(pct500, Bifenthrin_ML)) +
   ylab('Bifenthrin (ng/g)') +
   xlab('Percent Impervious w/in 500 m')
 plt
-
-ggsave('figures/Bifenthrin_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
 ```
-
-```{r resistant_regression_plot_small, fig.width=3.5, fig.height=2.5}
-plt <- ggplot(tmp, aes(pct500, Bifenthrin_ML)) +
-  geom_point(aes(color = Bifenthrin_ND), size = 1.5) +
-  geom_line(data = theline, aes(x,y),
-            color = cbep_colors()[5],
-            lwd = 0.5) +
-  geom_text(aes(x=4, y=0.55, label = 'Yarmouth 2014'),
-            hjust = 0, size = 1.9) +
-  geom_text(aes(x=42.5, y=0.99, label = 'South Portland 2014'),
-            hjust = 1, size = 1.9) +
-  
-  theme_cbep(base_size = 7) +
-  theme(legend.position=c(0.75, 0.2)) +
-  
-  scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
-                     labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
-  scale_y_log10() +
-  
-  ylab('Bifenthrin (ng/g)') +
-  xlab('Percent Impervious within 500 m')
-plt
-ggsave('figures/Bifenthrin_resistant_revised.pdf', device = cairo_pdf, width = 3.5, height = 2.5)
-```
-
 
 # Concentrations on an Organic Carbon Basis
 Toxicity of organic contaminants in sediment are often more highly correlated
@@ -243,11 +210,33 @@ obvious which concentration basis makes better sense.  Here we produce the
 OC-based graphic, for completeness, although we are unlikely to use it in the 
 Report.
 
+## Log-Linear Model
+```{r lm_oc}
+the_lm <- lm(log10(Bifenthrin_OC)~pct500 * Sand * Moisture, data = conc_data)
+step_lm <- step(the_lm)
+summary(step_lm)
+```
+
+Sand, Moisture and a Sand by Moisture interaction are retained by AIC, but are
+not statistically significant in the final model.
+
+
+## Robust Regresison
+```{r rob_reg_oc}
+the_lmrob <- lmrob(log10(Bifenthrin_OC)~pct500 + Sand + Moisture, data = conc_data)
+summary(the_lmrob)
+```
+As for the linear model, only the impervious cover term is statsitically 
+significant.
+
+## Theil-Sel (Seigal) Estimator
 ```{r mblm2}
 the_mblm <- mblm(log_bifenthrin_oc~pct500, data = tmp)
 summary(the_mblm)
 cor.test(tmp$pct500,tmp$log_bifenthrin_oc, method = 'kendall')
 ```
+
+### Showing the Resistant Regression
 We again create a dataframe.
 ```{r prepare_graphic_2}
 coefs <- coef(the_mblm)
@@ -276,6 +265,5 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_QML)) +
   ylab('Bifenthrin (ng/g OC)') +
   xlab('Percent Impervious w/in 500 m')
 plt
-ggsave('figures/BifenthrinOC_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
 ```
 

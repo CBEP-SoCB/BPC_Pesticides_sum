@@ -49,32 +49,19 @@ impervious surfaces (as a rough measure of urbanization).
 
 ``` r
 library(tidyverse)
-```
-
-    ## Warning: package 'tidyverse' was built under R version 4.0.5
-
-    ## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
-
-    ## v ggplot2 3.3.3     v purrr   0.3.4
-    ## v tibble  3.1.2     v dplyr   1.0.6
-    ## v tidyr   1.1.3     v stringr 1.4.0
-    ## v readr   1.4.0     v forcats 0.5.1
-
-    ## Warning: package 'tidyr' was built under R version 4.0.5
-
-    ## Warning: package 'dplyr' was built under R version 4.0.5
-
-    ## Warning: package 'forcats' was built under R version 4.0.5
-
-    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
-    ## x dplyr::filter() masks stats::filter()
-    ## x dplyr::lag()    masks stats::lag()
-
-``` r
+#> -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+#> v ggplot2 3.3.5     v purrr   0.3.4
+#> v tibble  3.1.6     v dplyr   1.0.7
+#> v tidyr   1.1.4     v stringr 1.4.0
+#> v readr   2.1.1     v forcats 0.5.1
+#> -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+#> x dplyr::filter() masks stats::filter()
+#> x dplyr::lag()    masks stats::lag()
 library(mblm)
 
 library(CBEPgraphics)
 load_cbep_fonts()
+theme_set(theme_cbep())
 
 library(LCensMeans)
 ```
@@ -84,15 +71,23 @@ library(LCensMeans)
 ## Folder References
 
 ``` r
-sibfldnm <- 'Derived_Data'
+sibfldnm <- 'Data'
 parent   <- dirname(getwd())
 sibling  <- file.path(parent,sibfldnm)
+
+dir.create(file.path(getwd(), 'figures'), showWarnings = FALSE)
 
 conc_fn <- 'BPC_2014_2015_Sediment_Data.txt'
 geogr_fn <- 'imperviousness.txt'
 ```
 
 ## Load IC Data
+
+Calculation of “percent imperviousness” values are based on the TOTAL
+area of a circle with the specified radius (500 m, of each sampling
+location, not the LAND area within that radius. We believe that method
+provides a better synoptic assessment of urbanization near sampling
+locations.
 
 ``` r
 ic_data <- read.delim(file.path(sibling, geogr_fn), sep = ',') %>%
@@ -153,7 +148,7 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
   geom_text(aes(x=42.5, y=0.99, label = 'South Portland 2014'),
             hjust = 1, size = 3) +
   
-  theme_cbep() +
+  theme_cbep(base_size = 12) +
   theme(legend.position=c(0.75, 0.2)) +
   
   scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
@@ -163,26 +158,20 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_ML)) +
   ylab('Bifenthrin (ng/g)') +
   xlab('Percent Impervious w/in 500 m')
 plt
+#> `geom_smooth()` using formula 'y ~ x'
+#> Warning: Removed 4 rows containing non-finite values (stat_smooth).
+#> Warning: Removed 4 rows containing missing values (geom_point).
 ```
 
-    ## `geom_smooth()` using formula 'y ~ x'
-
-    ## Warning: Removed 4 rows containing non-finite values (stat_smooth).
-
-    ## Warning: Removed 4 rows containing missing values (geom_point).
-
-![](Pesticide_Graphics_files/figure-gfm/plot_1-1.png)<!-- -->
+<img src="Pesticide_Graphics_files/figure-gfm/plot_1-1.png" style="display: block; margin: auto;" />
 
 ``` r
-#ggsave('BifenthrinWW.png', type = 'cairo', width = 7, height = 5)
-ggsave('BifenthrinWW.pdf', device = cairo_pdf, width = 7, height = 5)
+ggsave('figures/Bifenthrin.pdf', device = cairo_pdf, width = 7, height = 5)
+#> `geom_smooth()` using formula 'y ~ x'
+#> Warning: Removed 4 rows containing non-finite values (stat_smooth).
+
+#> Warning: Removed 4 rows containing missing values (geom_point).
 ```
-
-    ## `geom_smooth()` using formula 'y ~ x'
-
-    ## Warning: Removed 4 rows containing non-finite values (stat_smooth).
-
-    ## Warning: Removed 4 rows containing missing values (geom_point).
 
 ## Related Linear Models
 
@@ -191,34 +180,33 @@ provides a robust analysis or not. Here we compare a linear model with a
 Theil-Sen slope estimate, which is far more resistant to outliers. Slope
 and intercept estimates are substantially different. Plotting the
 Theil-Sen line produces a line more aligned with the bulk of the data,
-and so id preferred i this setting.
+and so is preferred in this setting.
 
 ### Linear Model
 
 ``` r
 the_lm <- lm(log10(Bifenthrin_ML)~pct500, data = conc_data)
 summary(the_lm)
+#> 
+#> Call:
+#> lm(formula = log10(Bifenthrin_ML) ~ pct500, data = conc_data)
+#> 
+#> Residuals:
+#>      Min       1Q   Median       3Q      Max 
+#> -0.50822 -0.23733 -0.02234  0.16581  1.10068 
+#> 
+#> Coefficients:
+#>              Estimate Std. Error t value Pr(>|t|)    
+#> (Intercept) -1.451924   0.097582 -14.879 1.29e-13 ***
+#> pct500       0.032075   0.005154   6.224 1.97e-06 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Residual standard error: 0.3364 on 24 degrees of freedom
+#>   (4 observations deleted due to missingness)
+#> Multiple R-squared:  0.6175, Adjusted R-squared:  0.6015 
+#> F-statistic: 38.74 on 1 and 24 DF,  p-value: 1.97e-06
 ```
-
-    ## 
-    ## Call:
-    ## lm(formula = log10(Bifenthrin_ML) ~ pct500, data = conc_data)
-    ## 
-    ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -0.51488 -0.24020 -0.02192  0.16578  1.10059 
-    ## 
-    ## Coefficients:
-    ##              Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept) -1.451773   0.097766 -14.850 1.35e-13 ***
-    ## pct500       0.032054   0.005163   6.208 2.05e-06 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## Residual standard error: 0.3371 on 24 degrees of freedom
-    ##   (4 observations deleted due to missingness)
-    ## Multiple R-squared:  0.6163, Adjusted R-squared:  0.6003 
-    ## F-statistic: 38.54 on 1 and 24 DF,  p-value: 2.047e-06
 
 ### Theil-Sen Resistent Regression
 
@@ -241,55 +229,48 @@ tmp <- conc_data %>%
   mutate(log_bifenthrin  = log(Bifenthrin_ML),
          log_bifenthrin_oc = log(Bifenthrin_OC_QML))
 the_mblm <- mblm(log_bifenthrin~pct500, data = tmp)
-summary(the_mblm)
 ```
-
-    ## Warning in wilcox.test.default(z$intercepts): cannot compute exact p-value with
-    ## ties
-
-    ## Warning in wilcox.test.default(z$slopes): cannot compute exact p-value with ties
-
-    ## Warning in wilcox.test.default(z$intercepts): cannot compute exact p-value with
-    ## ties
-
-    ## Warning in wilcox.test.default(z$slopes): cannot compute exact p-value with ties
-
-    ## 
-    ## Call:
-    ## mblm(formula = log_bifenthrin ~ pct500, dataframe = tmp)
-    ## 
-    ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -1.51770 -0.87750 -0.40064  0.05394  2.20897 
-    ## 
-    ## Coefficients:
-    ##             Estimate      MAD V value Pr(>|V|)    
-    ## (Intercept) -3.02041  0.15766       0 8.80e-06 ***
-    ## pct500       0.07472  0.02021     348 1.25e-05 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## Residual standard error: 0.851 on 24 degrees of freedom
 
 ``` r
+summary(the_mblm)
+#> Warning in wilcox.test.default(z$intercepts): cannot compute exact p-value with
+#> ties
+#> Warning in wilcox.test.default(z$slopes): cannot compute exact p-value with ties
+#> Warning in wilcox.test.default(z$intercepts): cannot compute exact p-value with
+#> ties
+#> Warning in wilcox.test.default(z$slopes): cannot compute exact p-value with ties
+#> 
+#> Call:
+#> mblm(formula = log_bifenthrin ~ pct500, dataframe = tmp)
+#> 
+#> Residuals:
+#>      Min       1Q   Median       3Q      Max 
+#> -1.50220 -0.87112 -0.40064  0.05394  2.20897 
+#> 
+#> Coefficients:
+#>             Estimate      MAD V value Pr(>|V|)    
+#> (Intercept) -3.02041  0.15766       0 8.80e-06 ***
+#> pct500       0.07472  0.01649     348 1.25e-05 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Residual standard error: 0.8495 on 24 degrees of freedom
 cor.test(tmp$pct500,tmp$log_bifenthrin, method = 'kendall')
+#> Warning in cor.test.default(tmp$pct500, tmp$log_bifenthrin, method = "kendall"):
+#> Cannot compute exact p-value with ties
+#> 
+#>  Kendall's rank correlation tau
+#> 
+#> data:  tmp$pct500 and tmp$log_bifenthrin
+#> z = 4.6317, p-value = 3.626e-06
+#> alternative hypothesis: true tau is not equal to 0
+#> sample estimates:
+#>       tau 
+#> 0.6604473
 ```
 
-    ## Warning in cor.test.default(tmp$pct500, tmp$log_bifenthrin, method = "kendall"):
-    ## Cannot compute exact p-value with ties
-
-    ## 
-    ##  Kendall's rank correlation tau
-    ## 
-    ## data:  tmp$pct500 and tmp$log_bifenthrin
-    ## z = 4.2772, p-value = 1.893e-05
-    ## alternative hypothesis: true tau is not equal to 0
-    ## sample estimates:
-    ##       tau 
-    ## 0.6098867
-
 We create a dataframe to pass to ggplot to generate the regression line
-in our plot
+in our plot.
 
 ``` r
 coefs <- coef(the_mblm)
@@ -310,7 +291,7 @@ plt <- ggplot(tmp, aes(pct500, Bifenthrin_ML)) +
   geom_text(aes(x=42.5, y=0.99, label = 'South Portland 2014'),
             hjust = 1, size = 3) +
   
-  theme_cbep() +
+  theme_cbep(base_size = 12) +
   theme(legend.position=c(0.75, 0.2)) +
   
   scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
@@ -322,11 +303,39 @@ plt <- ggplot(tmp, aes(pct500, Bifenthrin_ML)) +
 plt
 ```
 
-![](Pesticide_Graphics_files/figure-gfm/resistant_regression_plot-1.png)<!-- -->
+<img src="Pesticide_Graphics_files/figure-gfm/resistant_regression_plot-1.png" style="display: block; margin: auto;" />
 
 ``` r
-#ggsave('BifenthrinWW_Resistant.png', type = 'cairo', width = 7, height = 5)
-ggsave('BifenthrinWW_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
+ggsave('figures/Bifenthrin_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
+```
+
+``` r
+plt <- ggplot(tmp, aes(pct500, Bifenthrin_ML)) +
+  geom_point(aes(color = Bifenthrin_ND), size = 1.5) +
+  geom_line(data = theline, aes(x,y),
+            color = cbep_colors()[5],
+            lwd = 0.5) +
+  geom_text(aes(x=4, y=0.55, label = 'Yarmouth 2014'),
+            hjust = 0, size = 1.9) +
+  geom_text(aes(x=42.5, y=0.99, label = 'South Portland 2014'),
+            hjust = 1, size = 1.9) +
+  
+  theme_cbep(base_size = 7) +
+  theme(legend.position=c(0.75, 0.2)) +
+  
+  scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
+                     labels = c('Observed', ' Estimated\n(Below Detection Limit)')) +
+  scale_y_log10() +
+  
+  ylab('Bifenthrin (ng/g)') +
+  xlab('Percent Impervious within 500 m')
+plt
+```
+
+<img src="Pesticide_Graphics_files/figure-gfm/resistant_regression_plot_small-1.png" style="display: block; margin: auto;" />
+
+``` r
+ggsave('figures/Bifenthrin_resistant_revised.pdf', device = cairo_pdf, width = 3.5, height = 2.5)
 ```
 
 # Concentrations on an Organic Carbon Basis
@@ -346,41 +355,35 @@ to use it in the Report.
 ``` r
 the_mblm <- mblm(log_bifenthrin_oc~pct500, data = tmp)
 summary(the_mblm)
-```
-
-    ## 
-    ## Call:
-    ## mblm(formula = log_bifenthrin_oc ~ pct500, dataframe = tmp)
-    ## 
-    ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -1.47573 -0.35965 -0.08103  0.29195  1.69605 
-    ## 
-    ## Coefficients:
-    ##             Estimate     MAD V value Pr(>|V|)    
-    ## (Intercept)  2.07388 0.18424     351 2.98e-08 ***
-    ## pct500       0.06177 0.01463     350 5.96e-08 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## Residual standard error: 0.6564 on 24 degrees of freedom
-
-``` r
+#> 
+#> Call:
+#> mblm(formula = log_bifenthrin_oc ~ pct500, dataframe = tmp)
+#> 
+#> Residuals:
+#>      Min       1Q   Median       3Q      Max 
+#> -1.47355 -0.33769 -0.06182  0.31391  1.71802 
+#> 
+#> Coefficients:
+#>             Estimate     MAD V value Pr(>|V|)    
+#> (Intercept)  2.05192 0.17424     351 2.98e-08 ***
+#> pct500       0.06177 0.01432     350 5.96e-08 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Residual standard error: 0.6583 on 24 degrees of freedom
 cor.test(tmp$pct500,tmp$log_bifenthrin_oc, method = 'kendall')
+#> Warning in cor.test.default(tmp$pct500, tmp$log_bifenthrin_oc, method =
+#> "kendall"): Cannot compute exact p-value with ties
+#> 
+#>  Kendall's rank correlation tau
+#> 
+#> data:  tmp$pct500 and tmp$log_bifenthrin_oc
+#> z = 4.3184, p-value = 1.571e-05
+#> alternative hypothesis: true tau is not equal to 0
+#> sample estimates:
+#>       tau 
+#> 0.6133562
 ```
-
-    ## Warning in cor.test.default(tmp$pct500, tmp$log_bifenthrin_oc, method =
-    ## "kendall"): Cannot compute exact p-value with ties
-
-    ## 
-    ##  Kendall's rank correlation tau
-    ## 
-    ## data:  tmp$pct500 and tmp$log_bifenthrin_oc
-    ## z = 4.2298, p-value = 2.338e-05
-    ## alternative hypothesis: true tau is not equal to 0
-    ## sample estimates:
-    ##       tau 
-    ## 0.6007745
 
 We again create a dataframe.
 
@@ -396,12 +399,12 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_QML)) +
   geom_line(data = theline, aes(x,y),
             color = cbep_colors()[5],
             lwd = 1) +
-  geom_text(aes(x=4, y=53, label = 'Yarmouth 2014'),
+  geom_text(aes(x=0, y=65, label = 'Yarmouth 2014'),
             hjust = 0, size = 3) +
-  #geom_text(aes(x=42.5, y=86, label = 'South Portland 2014'),
-  #          hjust = 1, size = 3) +
+  geom_text(aes(x=40, y=95, label = 'South Portland 2014'),
+            hjust = 1, size = 3) +
   
-  theme_cbep() +
+  theme_cbep(base_size = 12) +
   theme(legend.position=c(0.75, 0.2)) +
   
   scale_color_manual(values = cbep_colors()[c(1,3)], name = '',
@@ -411,15 +414,12 @@ plt <- ggplot(conc_data, aes(pct500, Bifenthrin_OC_QML)) +
   ylab('Bifenthrin (ng/g OC)') +
   xlab('Percent Impervious w/in 500 m')
 plt
+#> Warning: Removed 4 rows containing missing values (geom_point).
 ```
 
-    ## Warning: Removed 4 rows containing missing values (geom_point).
-
-![](Pesticide_Graphics_files/figure-gfm/plot_3-1.png)<!-- -->
+<img src="Pesticide_Graphics_files/figure-gfm/plot_3-1.png" style="display: block; margin: auto;" />
 
 ``` r
-#ggsave('BifenthrinOC_Resistant.png', type = 'cairo', width = 7, height = 5)
-ggsave('BifenthrinOC_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
+ggsave('figures/BifenthrinOC_resistant.pdf', device = cairo_pdf, width = 7, height = 5)
+#> Warning: Removed 4 rows containing missing values (geom_point).
 ```
-
-    ## Warning: Removed 4 rows containing missing values (geom_point).

@@ -1,0 +1,179 @@
+---
+title: "Analysis of Bifenthrin Concentrations from BPC 2015 and 2014 Sediment Data"
+author: "Curtis C. Bohlen, Casco Bay Estuary Partnership"
+date: "Updated Jan 13, 2022"
+output:
+  github_document:
+    toc: true
+    fig_width: 7
+    fig_height: 5
+---
+
+<img
+    src="https://www.cascobayestuary.org/wp-content/uploads/2014/04/logo_sm.jpg"
+    style="position:absolute;top:10px;right:50px;" />
+
+#Libraries
+```{r}
+library(tidyverse)
+library(magrittr)
+library(readxl)
+library(ggtern)   # For Ternary Diagram in GGPLOT graphics
+
+library(CBEPgraphics)
+load_cbep_fonts()
+theme_set(theme_cbep())
+```
+
+# Load Data
+## Establish Folder References
+```{r folder_refs}
+sibfldnm <- 'Data'
+parent   <- dirname(getwd())
+sibling  <- file.path(parent,sibfldnm)
+fn <- "BPC_2014_2015_Sediment_Data.txt"
+
+# dir.create(file.path(getwd(), 'figures'), showWarnings = FALSE)
+```
+
+We need to address slightly different Yarmouth sampling locations, and sample 
+locations that include dates from Yarmouth and South Portland. 
+
+```{r}
+the_data <- read.delim(file.path(sibling, fn), skip = 1, sep = '\t') %>%
+  select(2:15) %>%
+  rename(Town = Location_Descr) %>%
+  mutate(Town = if_else(grepl("Yarmouth", Town), "Yarmouth", Town)) %>%
+  mutate(Town = if_else(Town =="Yarmouth" & Year == 2014, 
+                        "Yarmouth_2014", Town)) %>%
+  mutate(Town = if_else(Town =="Yarmouth" & Year == 2015,
+                        "Yarmouth_2015", Town)) %>%
+  mutate(Town = if_else(grepl("S. Portland", Town), "S. Portland", Town)) %>%
+  mutate(Town = plyr::revalue(Town, c("Kettle Cove (Cape Elizabeth)"    = "Kettle Cove",
+                  "Falmouth-Foreside (duplicate)"   = "Falmouth-Foreside",
+                  "Little Flying Point (replicate)" = "Little Flying Point",
+                  "Lookout Point (Harpswell Center)" = "Lookout Point")))
+
+summary(the_data)
+```
+
+# Add Location Data
+```{r}
+fn <- 'BPC_2014_sediment_Locations.txt'
+locs_2014 <- read.delim(file.path(sibling, fn), sep = '\t') %>%
+  mutate(Town = if_else(Town == "Yarmouth", "Yarmouth_2014", Town))
+         
+fn <- 'BPC_2015_sediment_Locations.txt'
+locs_2015 <- read.delim(file.path(sibling, fn), sep = '\t') %>%
+  mutate(Town = if_else(Town == "Yarmouth", "Yarmouth_2015", Town)) %>%
+  mutate(Town = if_else(Town == "Biddeford", "Biddeford (Saco R)", Town)) %>%
+  mutate(Town = if_else(Town == "Winslow", "Winslow Park", Town))
+
+locs <- bind_rows(locs_2014, locs_2015) %>%
+  select(Town, Latitude, Longitude) %>%
+  unique() %>%
+  arrange(Town)
+```
+
+```{r}
+the_data <- the_data %>%
+  left_join(locs, by = "Town")
+```
+
+# Sediment Composition 
+We recast sand, silt, and clay fractions to ignore Coarse" particles, so we can
+look at them in a classic Ternary Diagram.
+
+```{r}
+the_data <- the_data %>%
+  mutate(Sand2 = Sand / (Sand + Silt + Clay),
+         Silt2 = Silt / (Sand + Silt + Clay),
+         Clay2 = Clay / (Sand + Silt + Clay))
+```
+
+## Ternary Diagram
+```{r}
+plt <- the_data %>%
+  ggtern(aes(Clay2, Sand2, Silt2)) + geom_point((aes(color = Longitude)))
+plt
+```
+
+You can see that the sediments range from sands to sandy muds.  Sand content
+varies from about 10% to about 100%.  Clay is never above about 30%.
+
+Sand had the highest variation, so conditioning other variables on percent sand 
+probably makes the most sense.
+
+
+## Correlations
+Clay and Silt are highly correlated.
+```{r}
+the_data %$% cor(Sand2, Clay2)
+the_data %$% cor(Sand2, Silt2)
+the_data %$% cor(Silt2, Clay2)
+```
+
+As expected, organic matter is correlated with proportion of fines, especially
+silt and negatively correlated with sands) . The negative correlations is
+slightly less strong when you include the Coarse Particles in calculation of
+percent sands.
+
+```{r}
+the_data %$% cor(Sand, TOC)
+the_data %$% cor(Sand2, TOC)
+the_data %$% cor(Silt2, TOC) 
+```
+
+```{r}
+plt <- ggplot(the_data) + aes(Sand2, TOC) + 
+  geom_point(aes(color = Bifenthrin_Raw, size =  ! Bifenthrin_ND)) + 
+  geom_smooth(method = 'lm') +
+  scale_color_gradient(low = 'green1', high = 'blue') +
+  scale_size_discrete(range = c(2,4),name = 'Detected')
+plt
+
+```
+
+Bifenthrin clearly shows a pattern with TOC.  But it does NOT look like there's 
+a strong connection with soil texture per se.
+
+#Bifenthrin Levels
+```{r}
+the_data %$% cor(Sand, Bifenthrin_Raw, use = 'pairwise')
+the_data %$% cor(TOC, Bifenthrin_Raw, use = 'pairwise')
+the_data %$% cor(Clay, Bifenthrin_Raw, use = 'pairwise') 
+```
+But that treated all NDs as sitting at teh detection limit.
+
+```{r}
+plt <- ggplot(the_data, aes(TOC, Bifenthrin_Raw)) + 
+  geom_point() +
+  geom_smooth(method = 'lm') + 
+  geom_hline(yintercept = 0.045, color = 'red') # The detection limit
+plt
+```
+
+# Histograms
+```{r}
+plt <- ggplot(the_data, aes(Bifenthrin_Raw)) + 
+  geom_histogram(binwidth = .10) + 
+  geom_vline(xintercept = 0.045, color = 'red')
+plt
+```
+
+```{r}
+plt <- ggplot(the_data, aes(Bifenthrin_Raw)) + 
+  geom_density() + 
+  geom_vline(xintercept = 0.045, color = 'red')
+plt
+```
+One could almost consider that a truncated normal distribution.
+
+
+# Moisture is Correlated with Textrures
+```{r}
+plt <- ggplot(the_data, aes(Silt, Sand)) + 
+  geom_point(aes( color = Moisture), size =4) + 
+  geom_abline(intercept = 100, slope = -1)
+plt
+```

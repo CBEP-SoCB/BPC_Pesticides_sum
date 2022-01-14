@@ -1,0 +1,15 @@
+Map Key	Town	Latitude	Longitude
+1	Biddeford	43.474361	-70.410639
+2	Kettle Cove	43.561556	-70.21925
+3	South Portland	43.63798	-70.24746
+4	Falmouth-Foreside	43.73325	-70.204306
+5	Yarmouth	43.79814	-70.17511
+6	Winslow	43.800611	-70.118056
+7	Little Flying Point	43.832417	-70.044694
+8	Lookout Point	43.80719	-69.99298
+9	Lowell's Cove	43.75962	-69.97462
+10	Basin Point	43.73892	-70.04221
+11	Cousins Island	43.753917	-70.139639
+12	Cheabeague Island	43.7139	-70.1257
+13	Long Island	43.70667	-70.14135
+14	Peaks Island	43.65425	-70.19913

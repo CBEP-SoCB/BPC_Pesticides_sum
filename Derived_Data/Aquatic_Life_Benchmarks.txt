@@ -1,8 +1,0 @@
-All benchmarks in Ug/l for freshwater								
-Pesticide	Type	Comment	 Fish_Acute	Fish_Chronic	InvertAcute	Inver_Chronic	NonVascular_Plants	 Vascular_Palnt
-"2,4 D"	Herbicide			 	12500	 	 	299.2
-Imidacloprid	Insecticide	Neonic	114500	9000	0.385	0.01		
-MCPP	Herbicide	> fish and invert acute values	46500		45500	50800	14	1300
-Metolachlor	Herbicide		1900	30	550	1	8	21
-Bifenthrin	Insecticide	Pyrethroid	0.075	0.04	0.8	0.0013		
-Fipronil	Insecticide	> vascular plant value	41.5	2.2	0.11	0.011	140	100
