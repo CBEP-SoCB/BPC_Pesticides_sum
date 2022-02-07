@@ -35,6 +35,11 @@ the Bay's shoreline to relatively remote, island locations. The sampling
 design was intended to allow examination of the relationship between land use 
 and pesticide concentrations in marine muds.
 
+There were relatively few stormwater samples collected from within Casco Bay, so
+those data are not included or analyzed here.  They are available at a
+[companion GitHUb repository](https://github.com/CBEP-SoCB-Details/BPC_Pesticides.git)
+that contains additional code and data.
+
 # Statement of Purpose
 CBEP is committed to the ideal of open science.  Our State of the Bay data
 archives ensure the science underlying the 2020 State of the Bay report is
